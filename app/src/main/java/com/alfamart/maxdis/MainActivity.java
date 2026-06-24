@@ -42,7 +42,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     private TextToSpeech tts;
     private AlarmReceiver alarmReceiver;
+    
     private boolean isAlarmConfigEnabled = true;
+    private boolean isToko24JamEnabled = false;
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override
@@ -60,11 +62,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
         vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
         alarmHandler = new Handler(Looper.getMainLooper());
-
         tts = new TextToSpeech(this, this);
 
+        // Muat pengaturan dari memori internal
         SharedPreferences prefs = getSharedPreferences("MaxdisPrefs", MODE_PRIVATE);
         isAlarmConfigEnabled = prefs.getBoolean("daily_alarm_on", true);
+        isToko24JamEnabled = prefs.getBoolean("toko_24h_on", false);
 
         webView = findViewById(R.id.webview);
         setupWebView();
@@ -119,12 +122,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             public boolean shouldOverrideUrlLoading(WebView view, String url) {
                 return !url.startsWith("file://");
             }
-            
-            @Override
-            public void onPageFinished(WebView view, String url) {
-                super.onPageFinished(view, url);
-                webView.evaluateJavascript("document.getElementById('alarmToggle').checked = " + isAlarmConfigEnabled + ";", null);
-            }
         });
 
         webView.setWebChromeClient(new WebChromeClient());
@@ -132,19 +129,21 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     private void setupDailyAlarms() {
-        int[] targetHours = {2, 9, 13, 20};
+        // Target Jam Alarm: 2 (subuh), 9 (pagi), 13 (siang), 17 (sore), 20 (malam)
+        int[] targetHours = {2, 9, 13, 17, 20};
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
         for (int i = 0; i < targetHours.length; i++) {
             Intent intent = new Intent("com.alfamart.maxdis.START_ALARM");
+            intent.putExtra("target_hour", targetHours[i]);
+            
             PendingIntent pendingIntent = PendingIntent.getBroadcast(
                 this, i, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
+            // Jika toggle alarm harian mati, hapus semua jadwal dari Android
             if (!isAlarmConfigEnabled) {
-                if (alarmManager != null) {
-                    alarmManager.cancel(pendingIntent);
-                }
+                if (alarmManager != null) alarmManager.cancel(pendingIntent);
                 continue;
             }
 
@@ -190,41 +189,44 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             });
         }
 
+        // HTML meminta data posisi switch sesaat setelah halaman selesai di-load
         @JavascriptInterface
-        public void setAlarmEnabled(boolean enabled) {
+        public void requestToggleState() {
             runOnUiThread(() -> {
-                isAlarmConfigEnabled = enabled;
+                webView.evaluateJavascript("setTogglesDariAndroid(" + isAlarmConfigEnabled + ", " + isToko24JamEnabled + ");", null);
+            });
+        }
+
+        // Menyimpan status modifikasi pengaturan dari menu HTML
+        @JavascriptInterface
+        public void saveAlarmSettings(boolean alarmOn, boolean toko24On) {
+            runOnUiThread(() -> {
+                isAlarmConfigEnabled = alarmOn;
+                isToko24JamEnabled = toko24On;
+
                 SharedPreferences.Editor editor = getSharedPreferences("MaxdisPrefs", MODE_PRIVATE).edit();
-                editor.putBoolean("daily_alarm_on", enabled);
+                editor.putBoolean("daily_alarm_on", alarmOn);
+                editor.putBoolean("toko_24h_on", toko24On);
                 editor.apply();
 
                 setupDailyAlarms();
 
-                String statusTxt = enabled ? "Alarm harian aktif!" : "Alarm harian dimatikan!";
-                Toast.makeText(MainActivity.this, statusTxt, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, "Pengaturan alarm diperbarui", Toast.LENGTH_SHORT).show();
             });
-        }
-
-        @JavascriptInterface
-        public void vibrate(int ms) {
-            if (vibrator == null) return;
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator.vibrate(VibrationEffect.createOneShot(ms, VibrationEffect.DEFAULT_AMPLITUDE));
-            } else {
-                vibrator.vibrate(ms);
-            }
-        }
-
-        @JavascriptInterface
-        public int getSdkVersion() {
-            return Build.VERSION.SDK_INT;
         }
     }
 
     public class AlarmReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            int hour = intent.getIntExtra("target_hour", -1);
+            
             if (isAlarmConfigEnabled) {
+                // Aturan khusus jam 02.00: Hanya bunyi jika toggle Toko 24 Jam AKTIF
+                if (hour == 2 && !isToko24JamEnabled) {
+                    return; 
+                }
+                
                 Toast.makeText(context, "Saatnya Maxdisplay!", Toast.LENGTH_LONG).show();
                 speak("saatnya maxdisplay");
             }
@@ -234,7 +236,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private void startNativeAlarm() {
         stopNativeAlarm();
         long[] pattern = {0, 500, 300, 500, 300, 500};
-
         if (vibrator != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
@@ -242,12 +243,9 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 vibrator.vibrate(pattern, 0);
             }
         }
-
         try {
             toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 90);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        } catch (Exception e) { e.printStackTrace(); }
 
         alarmRunnable = new Runnable() {
             @Override
@@ -264,49 +262,27 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     private void stopNativeAlarm() {
         alarmRunning = false;
-        if (alarmHandler != null && alarmRunnable != null) {
-            alarmHandler.removeCallbacks(alarmRunnable);
-        }
+        if (alarmHandler != null && alarmRunnable != null) alarmHandler.removeCallbacks(alarmRunnable);
         if (toneGenerator != null) {
             toneGenerator.stopTone();
             toneGenerator.release();
             toneGenerator = null;
         }
-        if (vibrator != null) {
-            vibrator.cancel();
-        }
-    }
-
-    // ─── Lifecycle ───────────────────────────────────────────────────────────
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        if (webView != null) webView.onPause();
+        if (vibrator != null) vibrator.cancel();
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        if (webView != null) webView.onResume();
-    }
+    protected void onPause() { super.onPause(); if (webView != null) webView.onPause(); }
+
+    @Override
+    protected void onResume() { super.onResume(); if (webView != null) webView.onResume(); }
 
     @Override
     protected void onDestroy() {
         stopNativeAlarm();
-        if (tts != null) {
-            tts.stop();
-            tts.shutdown();
-        }
-        try {
-            unregisterReceiver(alarmReceiver);
-        } catch (Exception e) {
-            // ignore
-        }
-        if (webView != null) {
-            webView.stopLoading();
-            webView.destroy();
-        }
+        if (tts != null) { tts.stop(); tts.shutdown(); }
+        try { unregisterReceiver(alarmReceiver); } catch (Exception e) {}
+        if (webView != null) { webView.stopLoading(); webView.destroy(); }
         super.onDestroy();
     }
 
