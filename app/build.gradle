@@ -8,8 +8,8 @@ android {
 
     defaultConfig {
         applicationId "com.alfamart.maxdis"
-        minSdk 23          
-        targetSdk 34       
+        minSdk 23          // Android 6.0 Marshmallow (Kompatibel untuk HP lama)
+        targetSdk 34       // Android 14
         versionCode 1
         versionName "1.0.0"
     }
@@ -30,6 +30,7 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
+    // Mengatasi duplikasi file meta saat kompilasi di server
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
     }
