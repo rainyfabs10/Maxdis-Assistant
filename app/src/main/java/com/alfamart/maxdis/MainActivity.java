@@ -64,7 +64,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         alarmHandler = new Handler(Looper.getMainLooper());
         tts = new TextToSpeech(this, this);
 
-        // Muat pengaturan dari memori internal
         SharedPreferences prefs = getSharedPreferences("MaxdisPrefs", MODE_PRIVATE);
         isAlarmConfigEnabled = prefs.getBoolean("daily_alarm_on", true);
         isToko24JamEnabled = prefs.getBoolean("toko_24h_on", false);
@@ -129,7 +128,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     }
 
     private void setupDailyAlarms() {
-        // Target Jam Alarm: 2 (subuh), 9 (pagi), 13 (siang), 17 (sore), 20 (malam)
         int[] targetHours = {2, 9, 13, 17, 20};
         AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
@@ -141,7 +139,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 this, i, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
             );
 
-            // Jika toggle alarm harian mati, hapus semua jadwal dari Android
             if (!isAlarmConfigEnabled) {
                 if (alarmManager != null) alarmManager.cancel(pendingIntent);
                 continue;
@@ -172,12 +169,23 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     public class AndroidBridge {
 
+        // Alarm Utama (Total Waktu Habis)
         @JavascriptInterface
         public void startAlarm() {
             runOnUiThread(() -> {
                 alarmRunning = true;
                 startNativeAlarm();
                 speak("selesaikan maxdisplay");
+            });
+        }
+
+        // BARU: Alarm Khusus Per Lorong (Saat Waktu Lorong Individual Habis)
+        @JavascriptInterface
+        public void startAlarmLorong() {
+            runOnUiThread(() -> {
+                alarmRunning = true;
+                startNativeAlarm();
+                speak("selesaikan lorong"); // Permintaan bunyi kustom
             });
         }
 
@@ -189,7 +197,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             });
         }
 
-        // HTML meminta data posisi switch sesaat setelah halaman selesai di-load
         @JavascriptInterface
         public void requestToggleState() {
             runOnUiThread(() -> {
@@ -197,7 +204,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             });
         }
 
-        // Menyimpan status modifikasi pengaturan dari menu HTML
         @JavascriptInterface
         public void saveAlarmSettings(boolean alarmOn, boolean toko24On) {
             runOnUiThread(() -> {
@@ -210,7 +216,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 editor.apply();
 
                 setupDailyAlarms();
-
                 Toast.makeText(MainActivity.this, "Pengaturan alarm diperbarui", Toast.LENGTH_SHORT).show();
             });
         }
@@ -220,13 +225,10 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         @Override
         public void onReceive(Context context, Intent intent) {
             int hour = intent.getIntExtra("target_hour", -1);
-            
             if (isAlarmConfigEnabled) {
-                // Aturan khusus jam 02.00: Hanya bunyi jika toggle Toko 24 Jam AKTIF
                 if (hour == 2 && !isToko24JamEnabled) {
                     return; 
                 }
-                
                 Toast.makeText(context, "Saatnya Maxdisplay!", Toast.LENGTH_LONG).show();
                 speak("saatnya maxdisplay");
             }
