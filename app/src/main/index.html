@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maxdis Assistant – Alfamart</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+  :root {
+    --red: #E31E24;
+    --red-dark: #B71C1C;
+    --red-light: #FFEBEE;
+    --green: #1B8A3E;
+    --green-light: #E8F5E9;
+    --yellow: #F59E0B;
+    --yellow-light: #FFFBEB;
+    --bg: #F5F5F5;
+    --white: #FFFFFF;
+    --gray-1: #F9F9F9;
+    --gray-2: #EEEEEE;
+    --gray-3: #9E9E9E;
+    --gray-4: #616161;
+    --text: #1A1A1A;
+    --shadow: 0 2px 12px rgba(0,0,0,0.10);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.13);
+    --radius: 14px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--red);
+    padding: 18px 20px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: 0 2px 8px rgba(227,30,36,0.25);
+  }
+  .header-logo {
+    background: white;
+    color: var(--red);
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    line-height: 1.2;
+    text-align: center;
+  }
+  .header-title {
+    color: white;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .header-sub {
+    color: rgba(255,255,255,0.75);
+    font-size: 11px;
+    font-weight: 500;
+    margin-top: 1px;
+  }
+
+  /* MAIN CONTENT */
+  .container { padding: 16px; max-width: 480px; margin: 0 auto; }
+
+  /* SETUP CARD */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--gray-4);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 14px;
+  }
+
+  /* TIME INPUT */
+  .time-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .time-row label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--gray-4);
+    white-space: nowrap;
+  }
+  .time-input {
+    flex: 1;
+    border: 2px solid var(--gray-2);
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    font-size: 20px;
+    font-weight: 700;
+    font-family: 'Inter', monospace;
+    color: var(--text);
+    background: var(--gray-1);
+    outline: none;
+    transition: border-color 0.2s;
+    width: 100%;
+  }
+  .time-input:focus { border-color: var(--red); background: white; }
+
+  /* LORONG GRID */
+  .lorong-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .lorong-card {
+    background: var(--gray-1);
+    border: 2px solid var(--gray-2);
+    border-radius: var(--radius-sm);
+    padding: 14px 12px 12px;
+    cursor: pointer;
+    transition: all 0.18s;
+    position: relative;
+  }
+  .lorong-card:hover { border-color: var(--red); background: var(--red-light); }
+  .lorong-card.done { border-color: var(--green); background: var(--green-light); }
+  .lorong-card.active { border-color: var(--red); background: var(--red-light); box-shadow: 0 0 0 3px rgba(227,30,36,0.15); }
+
+  .lorong-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--gray-3);
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+  }
+  .lorong-name {
+    font-size: 15px;
+    font-weight: 800;
+    color: var(--text);
+    margin: 3px 0 8px;
+  }
+  .lorong-plu-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .lorong-plu-label { font-size: 11px; color: var(--gray-3); font-weight: 600; }
+  .lorong-plu-input {
+    width: 100%;
+    border: 1.5px solid var(--gray-2);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Inter', monospace;
+    background: white;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .lorong-plu-input:focus { border-color: var(--red); }
+
+  .lorong-status {
+    position: absolute;
+    top: 10px; right: 10px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+  }
+  .lorong-status.done { background: var(--green); color: white; }
+  .lorong-status.active { background: var(--red); color: white; }
+
+  .lorong-est {
+    font-size: 10px;
+    color: var(--gray-3);
+    margin-top: 5px;
+    font-weight: 500;
+  }
+
+  /* TOTAL PLU SUMMARY */
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--red-light);
+    border-radius: var(--radius-sm);
+    margin-top: 12px;
+  }
+  .summary-label { font-size: 13px; font-weight: 600; color: var(--red-dark); }
+  .summary-val { font-size: 22px; font-weight: 900; color: var(--red-dark); }
+  .summary-time { font-size: 12px; color: var(--red); font-weight: 700; margin-top: 2px; text-align: right; }
+
+  /* MAIN TIMER */
+  .main-timer-card {
+    background: var(--red);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    box-shadow: var(--shadow-lg);
+    margin-bottom: 14px;
+    text-align: center;
+    display: none;
+  }
+  .main-timer-card.visible { display: block; }
+  .main-timer-label { color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .main-timer-display {
+    font-size: 56px;
+    font-weight: 900;
+    color: white;
+    letter-spacing: -2px;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .main-timer-display.warning { color: #FFD54F; }
+  .main-timer-display.danger { color: #FF8A80; animation: blink 0.7s infinite; }
+  .main-timer-sisa { color: rgba(255,255,255,0.7); font-size: 13px; margin-top: 6px; }
+
+  /* LORONG TIMER OVERLAY */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.6);
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .overlay.open { display: flex; }
+  .overlay-sheet {
+    background: white;
+    border-radius: 20px 20px 0 0;
+    padding: 28px 24px 32px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 -4px 32px rgba(0,0,0,0.18);
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp {
+    from { transform: translateY(80px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .overlay-lorong-label { font-size: 12px; font-weight: 700; color: var(--gray-3); text-transform: uppercase; letter-spacing: 0.8px; }
+  .overlay-lorong-name { font-size: 22px; font-weight: 900; color: var(--text); margin: 4px 0 20px; }
+
+  .lorong-timer-circle {
+    width: 160px; height: 160px;
+    margin: 0 auto 20px;
+    position: relative;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .lorong-timer-circle svg {
+    position: absolute; inset: 0;
+    transform: rotate(-90deg);
+  }
+  .lorong-timer-circle .track { fill: none; stroke: var(--gray-2); stroke-width: 8; }
+  .lorong-timer-circle .progress { fill: none; stroke: var(--red); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .lorong-timer-time {
+    font-size: 36px; font-weight: 900; color: var(--text); letter-spacing: -1px;
+    font-variant-numeric: tabular-nums; line-height: 1; text-align: center;
+  }
+  .lorong-timer-time.warning { color: var(--yellow); }
+  .lorong-timer-time.danger { color: var(--red); animation: blink 0.7s infinite; }
+  .lorong-timer-sub { font-size: 12px; color: var(--gray-3); font-weight: 500; text-align: center; margin-top: 2px; }
+
+  /* BUTTONS */
+  .btn {
+    display: block;
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: 'Inter', sans-serif;
+    letter-spacing: 0.3px;
+  }
+  .btn-red { background: var(--red); color: white; }
+  .btn-red:hover { background: var(--red-dark); }
+  .btn-red:active { transform: scale(0.98); }
+  .btn-green { background: var(--green); color: white; }
+  .btn-green:hover { background: #145E2C; }
+  .btn-green:active { transform: scale(0.98); }
+  .btn-gray { background: var(--gray-2); color: var(--gray-4); }
+  .btn-gray:hover { background: var(--gray-3); color: white; }
+  .btn-outline {
+    background: transparent;
+    border: 2px solid var(--gray-2);
+    color: var(--gray-4);
+    padding: 12px;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 10px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s;
+  }
+  .btn-outline:hover { border-color: var(--red); color: var(--red); }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; }
+  .btn-row .btn { flex: 1; }
+
+  /* ALARM OVERLAY */
+  .alarm-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(227,30,36,0.97);
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    text-align: center;
+    padding: 40px 24px;
+    animation: pulse-bg 1s infinite alternate;
+  }
+  .alarm-overlay.open { display: flex; }
+  @keyframes pulse-bg {
+    from { background: rgba(227,30,36,0.97); }
+    to { background: rgba(183,28,28,0.99); }
+  }
+  .alarm-icon { font-size: 72px; margin-bottom: 16px; animation: shake 0.5s infinite; }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-6px) rotate(-5deg); }
+    75% { transform: translateX(6px) rotate(5deg); }
+  }
+  .alarm-title { font-size: 28px; font-weight: 900; color: white; line-height: 1.2; margin-bottom: 8px; }
+  .alarm-sub { font-size: 16px; color: rgba(255,255,255,0.85); margin-bottom: 36px; }
+  .alarm-btn {
+    background: white;
+    color: var(--red);
+    border: none;
+    border-radius: 16px;
+    padding: 18px 40px;
+    font-size: 20px;
+    font-weight: 900;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    animation: pulse-btn 0.8s infinite alternate;
+  }
+  @keyframes pulse-btn {
+    from { transform: scale(1); }
+    to { transform: scale(1.04); }
+  }
+
+  @keyframes blink {
+    0%,100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* PROGRESS LORONG */
+  .progress-bar-wrap { background: var(--gray-2); border-radius: 99px; height: 6px; margin-top: 10px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--green); border-radius: 99px; transition: width 0.4s ease; }
+
+  /* STATUS ROW */
+  .status-badges { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .badge {
+    padding: 4px 10px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 700;
+    background: var(--gray-2);
+    color: var(--gray-4);
+  }
+  .badge.done { background: var(--green-light); color: var(--green); }
+  .badge.active { background: var(--red-light); color: var(--red); }
+
+  .hint { font-size: 12px; color: var(--gray-3); text-align: center; margin-top: 10px; }
+
+  /* RESPONSIVE */
+  @media (max-width: 360px) {
+    .lorong-grid { grid-template-columns: 1fr; }
+    .main-timer-display { font-size: 44px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">ALFA<br>MART</div>
+  <div>
+    <div class="header-title">Maxdis Assistant</div>
+    <div class="header-sub">Timer & Panduan Maximal Display</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- SETUP CARD -->
+  <div class="card" id="setupCard">
+    <div class="card-title">⏰ Waktu Mulai</div>
+    <div class="time-row">
+      <label>Mulai pukul</label>
+      <input type="time" class="time-input" id="startTime" />
+    </div>
+  </div>
+
+  <!-- LORONG CARDS -->
+  <div class="card">
+    <div class="card-title">📦 Total PLU per Lorong</div>
+    <div class="lorong-grid" id="lorongGrid"></div>
+
+    <div class="summary-row">
+      <div>
+        <div class="summary-label">Total PLU Semua Lorong</div>
+        <div class="summary-time" id="estimasiTotal">Estimasi: –</div>
+      </div>
+      <div class="summary-val" id="totalPLU">0</div>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="lorongProgressBar" style="width:0%"></div>
+    </div>
+    <div class="status-badges" id="statusBadges"></div>
+  </div>
+
+  <!-- START BUTTON -->
+  <button class="btn btn-red" id="btnMulai" onclick="mulaiMaxdis()">▶ Mulai Maxdis</button>
+  <div class="hint" id="hintText">Isi waktu mulai dan total PLU tiap lorong dulu</div>
+
+  <!-- MAIN TIMER CARD -->
+  <div class="main-timer-card" id="mainTimerCard">
+    <div class="main-timer-label">⏱ Sisa Waktu Maxdis</div>
+    <div class="main-timer-display" id="mainTimerDisplay">00:00:00</div>
+    <div class="main-timer-sisa" id="mainTimerSisa">–</div>
+    <div class="btn-row" style="margin-top:18px;">
+      <button class="btn btn-gray" onclick="resetAll()" style="font-size:14px;">↩ Reset</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- LORONG TIMER OVERLAY -->
+<div class="overlay" id="lorongOverlay">
+  <div class="overlay-sheet">
+    <div class="overlay-lorong-label">Pengerjaan</div>
+    <div class="overlay-lorong-name" id="overlayLorongName">Lorong 1</div>
+
+    <div class="lorong-timer-circle" id="timerCircle">
+      <svg viewBox="0 0 160 160" width="160" height="160">
+        <circle class="track" cx="80" cy="80" r="68"/>
+        <circle class="progress" id="circleProgress" cx="80" cy="80" r="68"
+          stroke-dasharray="427.26" stroke-dashoffset="0"/>
+      </svg>
+      <div>
+        <div class="lorong-timer-time" id="lorongTimerDisplay">00:00</div>
+        <div class="lorong-timer-sub" id="lorongTimerSub">menit tersisa</div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-green" id="btnSelesaiLorong" onclick="selesaiLorong()">✓ Selesai Lorong</button>
+      <button class="btn-outline" onclick="tutupOverlay()">✕ Tutup</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALARM OVERLAY (Lorong) -->
+<div class="alarm-overlay" id="alarmLorong">
+  <div class="alarm-icon">⏰</div>
+  <div class="alarm-title" id="alarmLorongTitle">Waktu Lorong Habis!</div>
+  <div class="alarm-sub" id="alarmLorongSub">Segera selesaikan pengerjaan lorong ini</div>
+  <button class="alarm-btn" onclick="selesaiLorong()">✓ Selesai Lorong Ini</button>
+</div>
+
+<!-- ALARM OVERLAY (Maxdis) -->
+<div class="alarm-overlay" id="alarmMaxdis" style="background:rgba(27,138,62,0.97);">
+  <div class="alarm-icon">🎉</div>
+  <div class="alarm-title">Waktu Maxdis Habis!</div>
+  <div class="alarm-sub">Selesaikan pengerjaan maxdis sekarang!</div>
+  <button class="alarm-btn" onclick="selesaiMaxdis()">✓ Selesai Maxdis</button>
+</div>
+
+<script>
+  const LORONG_NAMES = ['Lorong 1','Lorong 2','Lorong 3','Lorong 4','Lorong 5','Lorong 6'];
+  const CIRCUMFERENCE = 2 * Math.PI * 68; // ≈ 427.26
+
+  let lorongData = LORONG_NAMES.map((name, i) => ({
+    name,
+    plu: 0,
+    done: false,
+    active: false,
+  }));
+
+  let mainTimer = null;
+  let lorongTimer = null;
+  let mainEndTime = null;
+  let lorongEndTime = null;
+  let activeLorong = null;
+  let lorongTotalSecs = 0;
+  let alarmAudio = null;
+
+  // --- INIT LORONG GRID ---
+  function renderLorongGrid() {
+    const grid = document.getElementById('lorongGrid');
+    grid.innerHTML = '';
+    lorongData.forEach((l, i) => {
+      const div = document.createElement('div');
+      div.className = 'lorong-card' + (l.done ? ' done' : '') + (l.active ? ' active' : '');
+      div.id = `lorongCard${i}`;
+      div.onclick = (e) => { if(!e.target.classList.contains('lorong-plu-input')) bukaLorong(i); };
+
+      const pluVal = l.plu || '';
+      const estMins = l.plu ? (l.plu * 5 / 60).toFixed(1) : '–';
+      const statusIcon = l.done ? '<div class="lorong-status done">✓</div>' : (l.active ? '<div class="lorong-status active">▶</div>' : '');
+
+      div.innerHTML = `
+        ${statusIcon}
+        <div class="lorong-label">Lorong</div>
+        <div class="lorong-name">${l.name.replace('Lorong ','')}</div>
+        <div class="lorong-plu-row">
+          <span class="lorong-plu-label">PLU</span>
+          <input class="lorong-plu-input" type="number" min="0" placeholder="0"
+            value="${pluVal}" id="pluInput${i}"
+            onclick="event.stopPropagation()"
+            oninput="updatePLU(${i}, this.value)" />
+        </div>
+        <div class="lorong-est">⏱ Est. ~${estMins} mnt</div>
+      `;
+      grid.appendChild(div);
+    });
+    updateSummary();
+    updateBadges();
+  }
+
+  function updatePLU(idx, val) {
+    lorongData[idx].plu = parseInt(val) || 0;
+    updateSummary();
+    // re-render just the est text
+    const estEl = document.querySelector(`#lorongCard${idx} .lorong-est`);
+    const estMins = lorongData[idx].plu ? (lorongData[idx].plu * 5 / 60).toFixed(1) : '–';
+    if(estEl) estEl.textContent = `⏱ Est. ~${estMins} mnt`;
+  }
+
+  function updateSummary() {
+    const total = lorongData.reduce((s, l) => s + l.plu, 0);
+    document.getElementById('totalPLU').textContent = total;
+    const totalMins = total ? ((total * 5 / 60) + 1).toFixed(0) : 0;
+    const hh = Math.floor(totalMins / 60);
+    const mm = totalMins % 60;
+    document.getElementById('estimasiTotal').textContent =
+      total ? `Est. maxdis: ${hh > 0 ? hh+'j ' : ''}${mm}mnt` : 'Estimasi: –';
+  }
+
+  function updateBadges() {
+    const done = lorongData.filter(l => l.done).length;
+    const bar = document.getElementById('lorongProgressBar');
+    bar.style.width = (done / 6 * 100) + '%';
+    const wrap = document.getElementById('statusBadges');
+    wrap.innerHTML = lorongData.map((l, i) =>
+      `<span class="badge${l.done ? ' done' : l.active ? ' active' : ''}">
+        ${l.name} ${l.done ? '✓' : l.active ? '▶' : ''}
+      </span>`
+    ).join('');
+  }
+
+  // --- START MAXDIS ---
+  function mulaiMaxdis() {
+    const startTimeVal = document.getElementById('startTime').value;
+    const total = lorongData.reduce((s, l) => s + l.plu, 0);
+    if (total === 0) { alert('Isi dulu total PLU minimal 1 lorong!'); return; }
+    if (!startTimeVal) { alert('Isi dulu waktu mulai!'); return; }
+
+    // hitung end time
+    const now = new Date();
+    const [sh, sm] = startTimeVal.split(':').map(Number);
+    const start = new Date(now);
+    start.setHours(sh, sm, 0, 0);
+    if (start < now) start.setDate(start.getDate() + 1); // next day jika sudah lewat
+
+    const totalMins = Math.ceil((total * 5 / 60) + 1);
+    mainEndTime = new Date(start.getTime() + totalMins * 60 * 1000);
+
+    document.getElementById('mainTimerCard').classList.add('visible');
+    document.getElementById('btnMulai').textContent = '✓ Maxdis Berjalan';
+    document.getElementById('btnMulai').disabled = true;
+    document.getElementById('btnMulai').style.opacity = '0.5';
+    document.getElementById('hintText').textContent = `Klik lorong untuk mulai pengerjaan tiap lorong`;
+
+    tickMainTimer();
+    mainTimer = setInterval(tickMainTimer, 1000);
+  }
+
+  function tickMainTimer() {
+    const now = new Date();
+    const diff = Math.max(0, Math.floor((mainEndTime - now) / 1000));
+    const hh = String(Math.floor(diff / 3600)).padStart(2, '0');
+    const mm = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+    const ss = String(diff % 60).padStart(2, '0');
+    const el = document.getElementById('mainTimerDisplay');
+    el.textContent = `${hh}:${mm}:${ss}`;
+    el.className = 'main-timer-display' + (diff <= 300 ? (diff <= 60 ? ' danger' : ' warning') : '');
+
+    const selesaiAt = new Date(mainEndTime);
+    document.getElementById('mainTimerSisa').textContent =
+      `Selesai pukul ${selesaiAt.getHours().toString().padStart(2,'0')}:${selesaiAt.getMinutes().toString().padStart(2,'0')}`;
+
+    if (diff === 0) {
+      clearInterval(mainTimer);
+      bunyiAlarm();
+      document.getElementById('alarmMaxdis').classList.add('open');
+    }
+  }
+
+  function selesaiMaxdis() {
+    stopAlarm();
+    document.getElementById('alarmMaxdis').classList.remove('open');
+  }
+
+  // --- LORONG TIMER ---
+  function bukaLorong(idx) {
+    if (!mainEndTime) { alert('Mulai Maxdis dulu sebelum mengerjakan lorong!'); return; }
+    const l = lorongData[idx];
+    if (l.done) { alert(`${l.name} sudah selesai ✓`); return; }
+    if (l.plu === 0) { alert(`Isi PLU untuk ${l.name} dulu!`); return; }
+
+    activeLorong = idx;
+    // mark active
+    lorongData.forEach(x => x.active = false);
+    lorongData[activeLorong].active = true;
+    renderLorongGrid();
+
+    document.getElementById('overlayLorongName').textContent = l.name + ` — ${l.plu} PLU`;
+
+    const totalSecs = Math.ceil(l.plu * 5 / 60 * 60); // plu*5/60 minutes → seconds
+    lorongTotalSecs = totalSecs;
+    lorongEndTime = new Date(Date.now() + totalSecs * 1000);
+
+    document.getElementById('lorongOverlay').classList.add('open');
+    tickLorongTimer();
+    if (lorongTimer) clearInterval(lorongTimer);
+    lorongTimer = setInterval(tickLorongTimer, 1000);
+  }
+
+  function tickLorongTimer() {
+    const now = new Date();
+    const diff = Math.max(0, Math.floor((lorongEndTime - now) / 1000));
+    const mm = String(Math.floor(diff / 60)).padStart(2, '0');
+    const ss = String(diff % 60).padStart(2, '0');
+    const el = document.getElementById('lorongTimerDisplay');
+    el.textContent = `${mm}:${ss}`;
+    el.className = 'lorong-timer-time' + (diff <= 60 ? ' danger' : diff <= 180 ? ' warning' : '');
+    document.getElementById('lorongTimerSub').textContent =
+      diff > 0 ? `detik tersisa` : `Waktu habis!`;
+
+    // circle progress
+    const pct = diff / lorongTotalSecs;
+    const offset = CIRCUMFERENCE * (1 - pct);
+    document.getElementById('circleProgress').style.strokeDashoffset = offset;
+    const col = diff <= 60 ? '#E31E24' : diff <= 180 ? '#F59E0B' : '#E31E24';
+    document.getElementById('circleProgress').style.stroke = diff <= 180 ? (diff <= 60 ? '#E31E24' : '#F59E0B') : '#E31E24';
+
+    if (diff === 0) {
+      clearInterval(lorongTimer);
+      bunyiAlarm();
+      const l = lorongData[activeLorong];
+      document.getElementById('alarmLorongTitle').textContent = `Waktu ${l.name} Habis!`;
+      document.getElementById('alarmLorongSub').textContent = `Segera selesaikan dan pindah lorong berikutnya`;
+      document.getElementById('alarmLorong').classList.add('open');
+    }
+  }
+
+  function selesaiLorong() {
+    stopAlarm();
+    document.getElementById('alarmLorong').classList.remove('open');
+    clearInterval(lorongTimer);
+    if (activeLorong !== null) {
+      lorongData[activeLorong].done = true;
+      lorongData[activeLorong].active = false;
+    }
+    activeLorong = null;
+    document.getElementById('lorongOverlay').classList.remove('open');
+    renderLorongGrid();
+    updateBadges();
+
+    // cek semua done
+    const allDone = lorongData.every(l => l.done);
+    if (allDone) {
+      setTimeout(() => alert('🎉 Semua lorong selesai! Maxdis berhasil!'), 200);
+    }
+  }
+
+  function tutupOverlay() {
+    clearInterval(lorongTimer);
+    if (activeLorong !== null) lorongData[activeLorong].active = false;
+    activeLorong = null;
+    document.getElementById('lorongOverlay').classList.remove('open');
+    renderLorongGrid();
+  }
+
+  // --- ALARM ---
+  let audioCtx = null;
+  let alarmOscillators = [];
+
+  // Deteksi apakah berjalan di dalam Android WebView (AndroidBridge tersedia)
+  var isAndroid = (typeof AndroidBridge !== 'undefined');
+
+  function bunyiAlarm() {
+    if (isAndroid) {
+      // Gunakan native Android alarm (tone + vibrate)
+      try { AndroidBridge.startAlarm(); } catch(e) {}
+      return;
+    }
+    // Fallback: Web Audio API untuk browser biasa
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      alarmOscillators = [];
+      function playBeep() {
+        const freqs = [880, 1100, 880, 1100];
+        freqs.forEach((freq, i) => {
+          try {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            gain.gain.value = 0.3;
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + i * 0.25);
+            osc.stop(audioCtx.currentTime + i * 0.25 + 0.2);
+          } catch(e) {}
+        });
+      }
+      playBeep();
+      alarmOscillators._interval = setInterval(playBeep, 1500);
+    } catch(e) { console.warn('Audio not supported'); }
+  }
+
+  function stopAlarm() {
+    if (isAndroid) {
+      try { AndroidBridge.stopAlarm(); } catch(e) {}
+      return;
+    }
+    if (alarmOscillators._interval) {
+      clearInterval(alarmOscillators._interval);
+    }
+    if (audioCtx) {
+      try { audioCtx.close(); } catch(e) {}
+      audioCtx = null;
+    }
+  }
+
+  // --- RESET ---
+  function resetAll() {
+    if (!confirm('Reset semua data dan timer?')) return;
+    clearInterval(mainTimer);
+    clearInterval(lorongTimer);
+    stopAlarm();
+    mainEndTime = null;
+    lorongEndTime = null;
+    activeLorong = null;
+    lorongData = LORONG_NAMES.map(name => ({ name, plu: 0, done: false, active: false }));
+    document.getElementById('mainTimerCard').classList.remove('visible');
+    document.getElementById('mainTimerDisplay').textContent = '00:00:00';
+    document.getElementById('btnMulai').textContent = '▶ Mulai Maxdis';
+    document.getElementById('btnMulai').disabled = false;
+    document.getElementById('btnMulai').style.opacity = '1';
+    document.getElementById('hintText').textContent = 'Isi waktu mulai dan total PLU tiap lorong dulu';
+    document.getElementById('lorongOverlay').classList.remove('open');
+    document.getElementById('alarmLorong').classList.remove('open');
+    document.getElementById('alarmMaxdis').classList.remove('open');
+    document.getElementById('startTime').value = '';
+    renderLorongGrid();
+  }
+
+  // Set default waktu sekarang
+  window.onload = () => {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, '0');
+    const mm = String(now.getMinutes()).padStart(2, '0');
+    document.getElementById('startTime').value = `${hh}:${mm}`;
+    renderLorongGrid();
+  };
+</script>
+</body>
+</html>
