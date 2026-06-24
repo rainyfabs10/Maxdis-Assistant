@@ -21,10 +21,11 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build APK
+        # Memperbaiki typo memori '512dp' menjadi '512m' yang bisa membuat JVM gagal start
         env:
-          JAVA_OPTS: "-Xmx2048m -XX:MaxMetaspaceSize=512dp"
+          JAVA_OPTS: "-Xmx2048m -XX:MaxMetaspaceSize=512m"
           GRADLE_OPTS: "-Xmx2048m -Dorg.gradle.jvmargs=-Xmx2048m"
-        run: ./gradlew assembleDebug --no-daemon --no-build-cache
+        run: ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
