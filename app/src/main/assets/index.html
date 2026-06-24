@@ -59,14 +59,12 @@
   .card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 14px; border: 1px solid rgba(26,95,206,0.05); }
   .card-title { font-size: 13px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
 
-  /* SETTING ROW STYLES */
   .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--gray-2); }
   .setting-row:last-child { border-bottom: none; }
   .setting-info { display: flex; flex-direction: column; gap: 2px; }
   .setting-label { font-size: 14px; font-weight: 700; color: var(--text); }
   .setting-desc { font-size: 11px; color: var(--gray-3); font-weight: 500; }
 
-  /* TOGGLE SWITCH STYLE */
   .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--gray-3); transition: .3s; border-radius: 26px; }
@@ -81,16 +79,14 @@
 
   .lorong-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .lorong-card { background: var(--gray-1); border: 2px solid var(--gray-2); border-radius: var(--radius-sm); padding: 14px 12px 12px; cursor: pointer; transition: all 0.18s; position: relative; }
-  .lorong-card.done { border-color: var(--green); background: var(--green-light); }
   .lorong-card.active { border-color: var(--blue); background: var(--blue-light); box-shadow: 0 0 0 3px rgba(26,95,206,0.15); }
+  .lorong-card.done { border-color: var(--green); background: var(--green-light); }
   .lorong-label { font-size: 11px; font-weight: 700; color: var(--gray-3); text-transform: uppercase; }
-  .lorong-name { font-size: 15px; font-weight: 800; color: var(--text); margin: 3px 0 8px; }
+  .lorong-name { font-size: 15px; font-weight: 800; color: var(--text); margin: 3px 0 4px; }
   .lorong-plu-row { display: flex; align-items: center; gap: 6px; }
   .lorong-plu-input { width: 100%; border: 1.5px solid var(--gray-2); border-radius: 6px; padding: 5px 8px; font-size: 16px; font-weight: 700; background: white; outline: none; }
-  .lorong-status { position: absolute; top: 10px; right: 10px; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; }
-  .lorong-status.done { background: var(--green); color: white; }
-  .lorong-status.active { background: var(--blue); color: white; }
-  .lorong-est { font-size: 10px; color: var(--gray-3); margin-top: 5px; font-weight: 500; }
+  .lorong-timer { font-size: 13px; font-weight: 800; color: var(--blue); margin-top: 4px; font-family: monospace; }
+  .lorong-card.done .lorong-timer { color: var(--green); }
 
   .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--blue-light); border-radius: var(--radius-sm); margin-top: 12px; }
   .summary-label { font-size: 13px; font-weight: 600; color: var(--blue-dark); }
@@ -102,16 +98,12 @@
   .main-timer-label { color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
   .main-timer-display { font-size: 56px; font-weight: 900; color: white; letter-spacing: -2px; }
 
-  /* OVERLAY MODAL / SHEET SHEET */
   .overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.6); align-items: flex-end; justify-content: center; }
-  .overlay.open { display: flex; }
   .overlay-sheet { background: white; border-radius: 20px 20px 0 0; padding: 24px 24px 32px; width: 100%; max-width: 480px; box-shadow: 0 -4px 32px rgba(0,0,0,0.18); }
   
   .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; font-family: 'Inter', sans-serif; }
   .btn-blue { background: var(--blue); color: white; }
-  .btn-green { background: var(--green); color: white; }
   .btn-gray { background: var(--gray-2); color: var(--gray-4); }
-  .btn-outline { background: transparent; border: 2px solid var(--gray-2); color: var(--gray-4); padding: 12px; font-size: 14px; font-weight: 700; border-radius: 10px; cursor: pointer; }
 
   .btn-row { display: flex; gap: 10px; margin-top: 14px; }
   .btn-row .btn { flex: 1; }
@@ -120,6 +112,7 @@
   .alarm-overlay.open { display: flex; }
   .alarm-icon { font-size: 72px; margin-bottom: 16px; animation: shake 0.5s infinite; }
   .alarm-title { font-size: 28px; font-weight: 900; color: white; margin-bottom: 8px; }
+  .alarm-sub { font-size: 18px; color: white; opacity: 0.9; margin-bottom: 24px; }
   .alarm-btn { background: white; color: var(--blue); border: none; border-radius: 16px; padding: 18px 40px; font-size: 20px; font-weight: 900; cursor: pointer; }
 
   @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
@@ -136,13 +129,12 @@
       <div class="header-sub">Timer & Panduan Display</div>
     </div>
   </div>
-  <button class="btn-settings" onclick="bukaSetting()" title="Pengaturan">
+  <button class="btn-settings" onclick="bukaSetting()">
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
   </button>
 </div>
 
 <div class="container">
-
   <div class="card">
     <div class="card-title">⏰ Waktu Mulai Manual</div>
     <div class="time-row">
@@ -177,9 +169,8 @@
 </div>
 
 <div class="overlay" id="settingOverlay">
-  <div class="overlay-sheet" style="border-radius: 20px 20px 20px 20px; margin-bottom: 20px; max-width:440px;">
+  <div class="overlay-sheet" style="border-radius: 20px; margin-bottom: 20px; max-width:440px;">
     <div class="card-title" style="font-size:16px; margin-bottom:20px; color:var(--text)">⚙️ Pengaturan Alarm</div>
-    
     <div class="setting-row">
       <div class="setting-info">
         <span class="setting-label">Aktifkan Alarm Harian</span>
@@ -190,7 +181,6 @@
         <span class="slider"></span>
       </label>
     </div>
-
     <div class="setting-row">
       <div class="setting-info">
         <span class="setting-label">Toko 24 Jam</span>
@@ -201,52 +191,135 @@
         <span class="slider"></span>
       </label>
     </div>
-
     <button class="btn btn-gray" onclick="tutupSetting()" style="margin-top: 24px;">✕ Tutup</button>
   </div>
 </div>
 
 <div class="alarm-overlay" id="alarmMaxdis">
   <div class="alarm-icon">🚨</div>
-  <div class="alarm-title">Waktu Maxdis Selesai!</div>
+  <div class="alarm-title" id="alarmTitleText">Waktu Maxdis Selesai!</div>
+  <div class="alarm-sub" id="alarmSubText">Semua lorong harus sudah siap</div>
   <button class="alarm-btn" onclick="selesaiMaxdis()">✓ Matikan Alarm</button>
 </div>
 
 <script>
   const LORONG_NAMES = ['Lorong 1','Lorong 2','Lorong 3','Lorong 4','Lorong 5','Lorong 6'];
-  let lorongData = LORONG_NAMES.map(name => ({ name, plu: 0, done: false, active: false }));
-  let mainTimer = null; let mainEndTime = null;
+  // Ditambahkan data endTime per lorong untuk tracking timer individual
+  let lorongData = LORONG_NAMES.map(name => ({ name, plu: 0, done: false, active: false, endTime: null, sisaDetik: 0 }));
+  let mainTimer = null; let mainEndTime = null; let lorongInterval = null;
+  let alarmAktifSekarang = "utama"; // Jenis alarm: "utama" atau "lorong"
 
   function renderLorongGrid() {
     const grid = document.getElementById('lorongGrid');
     grid.innerHTML = '';
     lorongData.forEach((l, i) => {
       const div = document.createElement('div');
-      div.className = 'lorong-card' + (l.done ? ' done' : '');
+      let classStatus = '';
+      if (l.done) classStatus = ' done';
+      else if (l.active) classStatus = ' active';
+
+      div.className = 'lorong-card' + classStatus;
+      div.setAttribute('onclick', `pilihLorong(${i}, event)`);
+      
+      // Menghitung teks sisa waktu di dalam kotak lorong
+      let timerTxt = '';
+      if (l.active && l.sisaDetik > 0) {
+        const mm = String(Math.floor(l.sisaDetik / 60)).padStart(2, '0');
+        const ss = String(l.sisaDetik % 60).padStart(2, '0');
+        timerTxt = `<div class="lorong-timer">⏳ ${mm}:${ss}</div>`;
+      } else if (l.done) {
+        timerTxt = '<div class="lorong-timer">✅ Selesai</div>';
+      }
+
       div.innerHTML = `
         <div class="lorong-label">Lorong</div>
         <div class="lorong-name">${l.name.replace('Lorong ','')}</div>
         <div class="lorong-plu-row">
-          <input class="lorong-plu-input" type="number" placeholder="0" value="${l.plu || ''}" oninput="updatePLU(${i}, this.value)" />
+          <input class="lorong-plu-input" type="number" placeholder="0" value="${l.plu || ''}" 
+                 oninput="updatePLU(${i}, this.value)" onclick="event.stopPropagation();" />
         </div>
+        ${timerTxt}
       `;
       grid.appendChild(div);
     });
+  }
+
+  // FUNGSI KLIK PER LORONG UNTUK MENYALAKAN ALARM INDIVIDUAL
+  function pilihLorong(idx, event) {
+    if (lorongData[idx].plu === 0) { alert('Isi PLU lorong ini dulu!'); return; }
+
+    if (!lorongData[idx].active && !lorongData[idx].done) {
+      // KLIK 1: Mengaktifkan timer lorong berdasarkan rumus (PLU * 5 / 12) + 1
+      lorongData[idx].active = true;
+      const mins = Math.ceil((lorongData[idx].plu * 5 / 12) + 1);
+      lorongData[idx].sisaDetik = mins * 60;
+      lorongData[idx].endTime = new Date().getTime() + (mins * 60 * 1000);
+    } else if (lorongData[idx].active && !lorongData[idx].done) {
+      // KLIK 2: Tandai Selesai secara manual sebelum waktu habis
+      lorongData[idx].active = false;
+      lorongData[idx].done = true;
+      lorongData[idx].sisaDetik = 0;
+    } else {
+      // KLIK 3: Reset Lorong kembali ke normal
+      lorongData[idx].done = false;
+      lorongData[idx].active = false;
+      lorongData[idx].sisaDetik = 0;
+    }
+    renderLorongGrid();
+    startLorongTicker();
+  }
+
+  // Loop detikan untuk memantau semua sisa waktu lorong yang berjalan bersamaan
+  function startLorongTicker() {
+    if (lorongInterval) clearInterval(lorongInterval);
+    lorongInterval = setInterval(() => {
+      let adaYangAktif = false;
+      const sekarang = new Date().getTime();
+
+      lorongData.forEach((l, i) => {
+        if (l.active && l.endTime) {
+          adaYangAktif = true;
+          const diff = Math.max(0, Math.floor((l.endTime - sekarang) / 1000));
+          l.sisaDetik = diff;
+
+          if (diff === 0) {
+            l.active = false;
+            l.done = true; // Otomatis berubah hijau saat waktu habis
+            triggerAlarmLorong(l.name);
+          }
+        }
+      });
+
+      renderLorongGrid();
+      if (!adaYangAktif) clearInterval(lorongInterval);
+    }, 1000);
+  }
+
+  // Menyalakan alarm khusus lorong dengan suara "Selesaikan Lorong"
+  function triggerAlarmLorong(namaLorong) {
+    alarmAktifSekarang = "lorong";
+    document.getElementById('alarmTitleText').textContent = "Waktu Lorong Habis!";
+    document.getElementById('alarmSubText').textContent = `${namaLorong} harus diselesaikan`;
+    document.getElementById('alarmMaxdis').style.display = 'flex';
+    
+    if (typeof AndroidBridge !== 'undefined') { 
+      AndroidBridge.startAlarmLorong(); 
+    }
   }
 
   function updatePLU(idx, val) {
     lorongData[idx].plu = parseInt(val) || 0;
     const total = lorongData.reduce((s, l) => s + l.plu, 0);
     document.getElementById('totalPLU').textContent = total;
-    const totalMins = total ? Math.ceil((total * 5 / 60) + 1) : 0;
+    
+    // Rumus Akurat: (Total PLU x 5 / 12) + 1
+    const totalMins = total ? Math.ceil((total * 5 / 12) + 1) : 0;
     document.getElementById('estimasiTotal').textContent = total ? `Est: ${totalMins} mnt` : 'Estimasi: –';
   }
 
-  // LOGIKA MODAL SETTING
   function bukaSetting() { document.getElementById('settingOverlay').style.display = 'flex'; }
   function tutupSetting() { document.getElementById('settingOverlay').style.display = 'none'; }
 
-  // Dipanggil otomatis oleh Android untuk mengisi nilai switch saat aplikasi dibuka
   function setTogglesDariAndroid(harian, toko24) {
     document.getElementById('alarmToggle').checked = harian;
     document.getElementById('toko24Toggle').checked = toko24;
@@ -270,7 +343,7 @@
     const start = new Date(now); start.setHours(sh, sm, 0, 0);
     if (start < now) start.setDate(start.getDate() + 1);
 
-    const totalMins = Math.ceil((total * 5 / 60) + 1);
+    const totalMins = Math.ceil((total * 5 / 12) + 1);
     mainEndTime = new Date(start.getTime() + totalMins * 60 * 1000);
 
     document.getElementById('mainTimerCard').classList.add('visible');
@@ -290,21 +363,24 @@
 
     if (diff === 0) {
       clearInterval(mainTimer);
+      alarmAktifSekarang = "utama";
+      document.getElementById('alarmTitleText').textContent = "Waktu Maxdis Selesai!";
+      document.getElementById('alarmSubText').textContent = "Semua lorong harus sudah siap";
+      document.getElementById('alarmMaxdis').style.display = 'flex';
       if (typeof AndroidBridge !== 'undefined') { AndroidBridge.startAlarm(); }
-      document.getElementById('alarmMaxdis').classList.add('open');
     }
   }
 
   function selesaiMaxdis() {
     if (typeof AndroidBridge !== 'undefined') { AndroidBridge.stopAlarm(); }
-    document.getElementById('alarmMaxdis').classList.remove('open');
+    document.getElementById('alarmMaxdis').style.display = 'none';
   }
 
   function resetAll() {
-    clearInterval(mainTimer); selesaiMaxdis();
+    clearInterval(mainTimer); clearInterval(lorongInterval); selesaiMaxdis();
     document.getElementById('mainTimerCard').classList.remove('visible');
     document.getElementById('btnMulai').disabled = false;
-    lorongData = LORONG_NAMES.map(name => ({ name, plu: 0, done: false, active: false }));
+    lorongData = LORONG_NAMES.map(name => ({ name, plu: 0, done: false, active: false, endTime: null, sisaDetik: 0 }));
     renderLorongGrid();
     updatePLU(0, 0);
   }
@@ -313,7 +389,6 @@
     const now = new Date();
     document.getElementById('startTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
     renderLorongGrid();
-    // Beritahu Android bahwa HTML sudah siap menerima data toggle
     if (typeof AndroidBridge !== 'undefined') { AndroidBridge.requestToggleState(); }
   };
 </script>
