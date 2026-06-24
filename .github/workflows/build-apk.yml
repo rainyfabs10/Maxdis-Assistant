@@ -1,0 +1,42 @@
+name: Build Maxdis APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:   # tombol "Run workflow" manual di GitHub
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # 1. Checkout kode dari repo
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      # 2. Setup JDK 17
+      - name: Setup JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      # 3. Izinkan gradlew dijalankan
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # 4. Build APK Debug
+      - name: Build APK Debug
+        run: ./gradlew assembleDebug --no-daemon
+
+      # 5. Upload APK sebagai artifact (bisa didownload)
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaxdisAssistant-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30   # tersimpan 
+30 hari
