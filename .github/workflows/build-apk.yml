@@ -17,12 +17,13 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Menggunakan sistem Gradle resmi dari GitHub, bypass gradlew lokal kamu
-      - name: Setup Gradle
+      - name: Setup Gradle tanpa Cache
         uses: gradle/actions/setup-gradle@v3
+        with:
+          # Mematikan total pembacaan dan penulisan cache ke server GitHub
+          cache-disabled: true
 
       - name: Build APK
-        # Kita panggil perintah 'gradle' langsung, bukan './gradlew'
         run: gradle assembleDebug --no-daemon
 
       - name: Upload APK
