@@ -1,14 +1,3 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        // Mengunci versi compiler Android Gradle Plugin agar kompatibel dengan SDK 34
-        classpath "com.android.tools.build:gradle:8.2.2"
-    }
-}
-
 plugins {
     id 'com.android.application'
 }
@@ -19,8 +8,8 @@ android {
 
     defaultConfig {
         applicationId "com.alfamart.maxdis"
-        minSdk 23          // Android 6.0 Marshmallow
-        targetSdk 34       // Android 14
+        minSdk 23          
+        targetSdk 34       
         versionCode 1
         versionName "1.0.0"
     }
@@ -41,7 +30,6 @@ android {
         targetCompatibility JavaVersion.VERSION_1_8
     }
 
-    // Handle duplicate files
     packagingOptions {
         exclude 'META-INF/DEPENDENCIES'
     }
