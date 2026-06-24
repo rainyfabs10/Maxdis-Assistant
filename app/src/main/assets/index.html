@@ -8,170 +8,6 @@
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
 
   :root {
-    --blue: #1A5FCE;
-    --blue-dark: #144ba3;
-    --blue-light: #EBF3FF;
-    --green: #2ECC71;
-    --green-light: #E8F8F0;
-    --yellow: #DCA32B;
-    --yellow-light: #FEF9E7;
-    --bg: #F4F6F9;
-    --white: #FFFFFF;
-    --gray-1: #F8F9FA;
-    --gray-2: #E9ECEF;
-    --gray-3: #ADB5BD;
-    --gray-4: #495057;
-    --text: #212529;
-    --shadow: 0 4px 12px rgba(26,95,206,0.08);
-    --shadow-lg: 0 8px 24px rgba(26,95,206,0.15);
-    --radius: 14px;
-    --radius-sm: 8px;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 20px; }
-
-  .header {
-    background: linear-gradient(135deg, var(--blue), #2A75E6);
-    padding: 18px 20px 14px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    box-shadow: 0 4px 12px rgba(26,95,206,0.2);
-    border-bottom: 4px solid var(--yellow);
-  }
-  .header-left { display: flex; align-items: center; gap: 12px; }
-  .header-logo {
-    background: var(--yellow); color: white; font-size: 11px; font-weight: 900;
-    letter-spacing: 0.5px; padding: 6px 8px; border-radius: 6px; line-height: 1.2; text-align: center;
-  }
-  .header-title { color: white; font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
-  .header-sub { color: rgba(255,255,255,0.85); font-size: 11px; font-weight: 500; margin-top: 1px; }
-  
-  .btn-settings {
-    background: transparent; border: none; color: white; cursor: pointer;
-    padding: 8px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    transition: background 0.2s;
-  }
-  .btn-settings:hover { background: rgba(255,255,255,0.15); }
-
-  .container { padding: 16px; max-width: 480px; margin: 0 auto; }
-  .card { background: var(--white); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 14px; border: 1px solid rgba(26,95,206,0.05); }
-  .card-title { font-size: 13px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 14px; }
-
-  .setting-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--gray-2); }
-  .setting-row:last-child { border-bottom: none; }
-  .setting-info { display: flex; flex-direction: column; gap: 2px; }
-  .setting-label { font-size: 14px; font-weight: 700; color: var(--text); }
-  .setting-desc { font-size: 11px; color: var(--gray-3); font-weight: 500; }
-
-  .switch { position: relative; display: inline-block; width: 46px; height: 26px; }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .slider { position: absolute; cursor: pointer; inset: 0; background-color: var(--gray-3); transition: .3s; border-radius: 26px; }
-  .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-  input:checked + .slider { background-color: var(--blue); }
-  input:checked + .slider:before { transform: translateX(20px); }
-
-  .time-row { display: flex; align-items: center; gap: 10px; }
-  .time-row label { font-size: 14px; font-weight: 600; color: var(--gray-4); white-space: nowrap; }
-  .time-input { flex: 1; border: 2px solid var(--gray-2); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 20px; font-weight: 700; color: var(--text); background: var(--gray-1); outline: none; }
-  .time-input:focus { border-color: var(--blue); background: white; }
-
-  .lorong-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-  .lorong-card { background: var(--gray-1); border: 2px solid var(--gray-2); border-radius: var(--radius-sm); padding: 14px 12px 12px; cursor: pointer; transition: all 0.18s; position: relative; }
-  .lorong-card.active { border-color: var(--blue); background: var(--blue-light); box-shadow: 0 0 0 3px rgba(26,95,206,0.15); }
-  .lorong-card.done { border-color: var(--green); background: var(--green-light); }
-  .lorong-label { font-size: 11px; font-weight: 700; color: var(--gray-3); text-transform: uppercase; }
-  .lorong-name { font-size: 15px; font-weight: 800; color: var(--text); margin: 3px 0 4px; }
-  .lorong-plu-row { display: flex; align-items: center; gap: 6px; }
-  .lorong-plu-input { width: 100%; border: 1.5px solid var(--gray-2); border-radius: 6px; padding: 5px 8px; font-size: 16px; font-weight: 700; background: white; outline: none; }
-  .lorong-timer { font-size: 13px; font-weight: 800; color: var(--blue); margin-top: 4px; font-family: monospace; }
-  .lorong-card.done .lorong-timer { color: var(--green); }
-
-  .summary-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--blue-light); border-radius: var(--radius-sm); margin-top: 12px; }
-  .summary-label { font-size: 13px; font-weight: 600; color: var(--blue-dark); }
-  .summary-val { font-size: 22px; font-weight: 900; color: var(--blue-dark); }
-  .summary-time { font-size: 12px; color: var(--blue); font-weight: 700; }
-
-  .main-timer-card { background: var(--blue); border-radius: var(--radius); padding: 24px 20px; box-shadow: var(--shadow-lg); margin-bottom: 14px; text-align: center; display: none; }
-  .main-timer-card.visible { display: block; }
-  .main-timer-label { color: rgba(255,255,255,0.8); font-size: 12px; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
-  .main-timer-display { font-size: 56px; font-weight: 900; color: white; letter-spacing: -2px; }
-
-  .overlay { display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.6); align-items: flex-end; justify-content: center; }
-  .overlay-sheet { background: white; border-radius: 20px 20px 0 0; padding: 24px 24px 32px; width: 100%; max-width: 480px; box-shadow: 0 -4px 32px rgba(0,0,0,0.18); }
-  
-  .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 12px; font-size: 16px; font-weight: 800; cursor: pointer; font-family: 'Inter', sans-serif; }
-  .btn-blue { background: var(--blue); color: white; }
-  .btn-gray { background: var(--gray-2); color: var(--gray-4); }
-
-  .btn-row { display: flex; gap: 10px; margin-top: 14px; }
-  .btn-row .btn { flex: 1; }
-
-  .alarm-overlay { display: none; position: fixed; inset: 0; z-index: 200; background: rgba(26,95,206,0.97); align-items: center; justify-content: center; flex-direction: column; text-align: center; padding: 40px 24px; }
-  .alarm-overlay.open { display: flex; }
-  .alarm-icon { font-size: 72px; margin-bottom: 16px; animation: shake 0.5s infinite; }
-  .alarm-title { font-size: 28px; font-weight: 900; color: white; margin-bottom: 8px; }
-  .alarm-sub { font-size: 18px; color: white; opacity: 0.9; margin-bottom: 24px; }
-  .alarm-btn { background: white; color: var(--blue); border: none; border-radius: 16px; padding: 18px 40px; font-size: 20px; font-weight: 900; cursor: pointer; }
-
-  @keyframes shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
-  .watermark-footer { text-align: center; font-size: 11px; color: var(--gray-3); font-weight: 600; padding: 20px 0 10px; margin-top: 30px; border-top: 1px dashed var(--gray-2); }
-</style>
-</head>
-<body>
-
-<div class="header">
-  <div class="header-left">
-    <div class="header-logo">MAX<br>DIS</div>
-    <div>
-      <div class="header-title">Maxdis Assistant</div>
-      <div class="header-sub">Timer & Panduan Display</div>
-    </div>
-  </div>
-  <button class="btn-settings" onclick="bukaSetting()">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-  </button>
-</div>
-
-<div class="container">
-  <div class="card">
-    <div class="card-title">⏰ Waktu Mulai Manual</div>
-    <div class="time-row">
-      <label>Mulai pukul</label>
-      <input type="time" class="time-input" id="startTime" />
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-title">📦 Total PLU per Lorong</div>
-    <div class="lorong-grid" id="lorongGrid"></div>
-    <div class="summary-row">
-      <div>
-        <div class="summary-label">Total PLU Semua Lorong</div>
-        <div class="summary-time" id="estimasiTotal">Estimasi: –</div>
-      </div>
-      <div class="summary-val" id="totalPLU">0</div>
-    </div>
-  </div>
-
-  <button class="btn btn-blue" id="btnMulai" onclick="mulaiMaxdis()">▶ Mulai Maxdis</button>
-
-  <div class="main-timer-card" id="mainTimerCard">
-    <div class="main-timer-label">⏱ Sisa Waktu Maxdis</div>
-    <div class="main-timer-display" id="mainTimerDisplay">00:00:00</div>
-    <div class="btn-row">
-      <button class="btn btn-gray" onclick="resetAll()">↩ Reset</button>
-<!DOCTYPE html>
-<html lang="id">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Maxdis Assistant – Alfamart</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-  :root {
     --red: #E31E24;
     --red-dark: #B71C1C;
     --red-light: #FFEBEE;
@@ -604,6 +440,10 @@
     </div>
   </div>
 
+  <div style="text-align: center; font-size: 11px; color: var(--gray-3); font-family: 'Inter', sans-serif; font-weight: 700; padding: 20px 0 10px; margin-top: 20px; border-top: 1px dashed var(--gray-2); letter-spacing: 0.5px;">
+    Maxdis Assistant v1.0.0 | Developed by @rainyfabs
+  </div>
+
 </div>
 
 <div class="overlay" id="lorongOverlay">
@@ -646,7 +486,7 @@
 
 <script>
   const LORONG_NAMES = ['Lorong 1','Lorong 2','Lorong 3','Lorong 4','Lorong 5','Lorong 6'];
-  const CIRCUMFERENCE = 2 * Math.PI * 68; // ≈ 427.26
+  const CIRCUMFERENCE = 2 * Math.PI * 68;
 
   let lorongData = LORONG_NAMES.map((name, i) => ({
     name,
@@ -661,9 +501,7 @@
   let lorongEndTime = null;
   let activeLorong = null;
   let lorongTotalSecs = 0;
-  let alarmAudio = null;
 
-  // --- INIT LORONG GRID ---
   function renderLorongGrid() {
     const grid = document.getElementById('lorongGrid');
     grid.innerHTML = '';
@@ -699,7 +537,6 @@
   function updatePLU(idx, val) {
     lorongData[idx].plu = parseInt(val) || 0;
     updateSummary();
-    // re-render just the est text
     const estEl = document.querySelector(`#lorongCard${idx} .lorong-est`);
     const estMins = lorongData[idx].plu ? (lorongData[idx].plu * 5 / 60).toFixed(1) : '–';
     if(estEl) estEl.textContent = `⏱ Est. ~${estMins} mnt`;
@@ -708,11 +545,10 @@
   function updateSummary() {
     const total = lorongData.reduce((s, l) => s + l.plu, 0);
     document.getElementById('totalPLU').textContent = total;
-    const totalMins = total ? ((total * 5 / 60) + 1).toFixed(0) : 0;
-    const hh = Math.floor(totalMins / 60);
-    const mm = totalMins % 60;
+    
+    const totalMins = total ? parseFloat(((total * 5) / 60) + 1).toFixed(2) : 0;
     document.getElementById('estimasiTotal').textContent =
-      total ? `Est. maxdis: ${hh > 0 ? hh+'j ' : ''}${mm}mnt` : 'Estimasi: –';
+      total ? `Est. maxdis: ${totalMins}mnt` : 'Estimasi: –';
   }
 
   function updateBadges() {
@@ -727,28 +563,25 @@
     ).join('');
   }
 
-  // --- START MAXDIS ---
   function mulaiMaxdis() {
     const startTimeVal = document.getElementById('startTime').value;
     const total = lorongData.reduce((s, l) => s + l.plu, 0);
     if (total === 0) { alert('Isi dulu total PLU minimal 1 lorong!'); return; }
     if (!startTimeVal) { alert('Isi dulu waktu mulai!'); return; }
 
-    // hitung end time
     const now = new Date();
     const [sh, sm] = startTimeVal.split(':').map(Number);
     const start = new Date(now);
     start.setHours(sh, sm, 0, 0);
-    if (start < now) start.setDate(start.getDate() + 1); // next day jika sudah lewat
+    if (start < now) start.setDate(start.getDate() + 1);
 
-    const totalMins = Math.ceil((total * 5 / 60) + 1);
-    mainEndTime = new Date(start.getTime() + totalMins * 60 * 1000);
+    const totalSecs = Math.ceil(((total * 5) / 60 + 1) * 60);
+    mainEndTime = new Date(start.getTime() + totalSecs * 1000);
 
     document.getElementById('mainTimerCard').classList.add('visible');
     document.getElementById('btnMulai').textContent = '✓ Maxdis Berjalan';
     document.getElementById('btnMulai').disabled = true;
     document.getElementById('btnMulai').style.opacity = '0.5';
-    document.getElementById('hintText').textContent = `Klik lorong untuk mulai pengerjaan tiap lorong`;
 
     tickMainTimer();
     mainTimer = setInterval(tickMainTimer, 1000);
@@ -780,7 +613,6 @@
     document.getElementById('alarmMaxdis').classList.remove('open');
   }
 
-  // --- LORONG TIMER ---
   function bukaLorong(idx) {
     if (!mainEndTime) { alert('Mulai Maxdis dulu sebelum mengerjakan lorong!'); return; }
     const l = lorongData[idx];
@@ -788,14 +620,13 @@
     if (l.plu === 0) { alert(`Isi PLU untuk ${l.name} dulu!`); return; }
 
     activeLorong = idx;
-    // mark active
     lorongData.forEach(x => x.active = false);
     lorongData[activeLorong].active = true;
     renderLorongGrid();
 
     document.getElementById('overlayLorongName').textContent = l.name + ` — ${l.plu} PLU`;
 
-    const totalSecs = Math.ceil(l.plu * 5 / 60 * 60); // plu*5/60 minutes → seconds
+    const totalSecs = l.plu * 5;
     lorongTotalSecs = totalSecs;
     lorongEndTime = new Date(Date.now() + totalSecs * 1000);
 
@@ -816,19 +647,13 @@
     document.getElementById('lorongTimerSub').textContent =
       diff > 0 ? `detik tersisa` : `Waktu habis!`;
 
-    // circle progress
     const pct = diff / lorongTotalSecs;
     const offset = CIRCUMFERENCE * (1 - pct);
     document.getElementById('circleProgress').style.strokeDashoffset = offset;
-    const col = diff <= 60 ? '#E31E24' : diff <= 180 ? '#F59E0B' : '#E31E24';
-    document.getElementById('circleProgress').style.stroke = diff <= 180 ? (diff <= 60 ? '#E31E24' : '#F59E0B') : '#E31E24';
 
     if (diff === 0) {
       clearInterval(lorongTimer);
-      
-      // DISINI DIUBAH: Memanggil fungsi alarm lorong khusus suara "selesaikan lorong"
       bunyiAlarmLorong();
-      
       const l = lorongData[activeLorong];
       document.getElementById('alarmLorongTitle').textContent = `Waktu ${l.name} Habis!`;
       document.getElementById('alarmLorongSub').textContent = `Segera selesaikan dan pindah lorong berikutnya`;
@@ -849,9 +674,7 @@
     renderLorongGrid();
     updateBadges();
 
-    // cek semua done
-    const allDone = lorongData.every(l => l.done);
-    if (allDone) {
+    if (lorongData.every(l => l.done)) {
       setTimeout(() => alert('🎉 Semua lorong selesai! Maxdis berhasil!'), 200);
     }
   }
@@ -864,35 +687,26 @@
     renderLorongGrid();
   }
 
-  // --- ALARM ---
-  let audioCtx = null;
-  let alarmOscillators = [];
-
   var isAndroid = (typeof AndroidBridge !== 'undefined');
 
   function bunyiAlarm() {
     if (isAndroid) {
       try { AndroidBridge.startAlarm(); } catch(e) {}
-      return;
     }
   }
 
-  // FUNGSI BARU: Memanggil suara kustom lorong ke Android Bridge
   function bunyiAlarmLorong() {
     if (isAndroid) {
       try { AndroidBridge.startAlarmLorong(); } catch(e) {}
-      return;
     }
   }
 
   function stopAlarm() {
     if (isAndroid) {
       try { AndroidBridge.stopAlarm(); } catch(e) {}
-      return;
     }
   }
 
-  // --- RESET ---
   function resetAll() {
     if (!confirm('Reset semua data dan timer?')) return;
     clearInterval(mainTimer);
@@ -917,140 +731,9 @@
 
   window.onload = () => {
     const now = new Date();
-    const hh = String(now.getHours()).padStart(2, '0');
-    const mm = String(now.getMinutes()).padStart(2, '0');
-    document.getElementById('startTime').value = `${hh}:${mm}`;
+    document.getElementById('startTime').value = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     renderLorongGrid();
   };
 </script>
 </body>
 </html>
-
-    </div>
-  </div>
-
-  <div class="watermark-footer">Maxdis Assistant | Alfamart</div>
-</div>
-
-<div class="overlay" id="settingOverlay">
-  <div class="overlay-sheet" style="border-radius: 20px; margin-bottom: 20px; max-width:440px;">
-    <div class="card-title" style="font-size:16px; margin-bottom:20px; color:var(--text)">⚙️ Pengaturan Alarm</div>
-    <div class="setting-row">
-      <div class="setting-info">
-        <span class="setting-label">Aktifkan Alarm Harian</span>
-        <span class="setting-desc">Pengingat otomatis jam 09, 13, 17, 20</span>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="alarmToggle" onchange="simpanSettingAndroid()">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <div class="setting-row">
-      <div class="setting-info">
-        <span class="setting-label">Toko 24 Jam</span>
-        <span class="setting-desc">Aktifkan alarm tambahan pukul 02.00 subuh</span>
-      </div>
-      <label class="switch">
-        <input type="checkbox" id="toko24Toggle" onchange="simpanSettingAndroid()">
-        <span class="slider"></span>
-      </label>
-    </div>
-    <button class="btn btn-gray" onclick="tutupSetting()" style="margin-top: 24px;">✕ Tutup</button>
-  </div>
-</div>
-
-<div class="alarm-overlay" id="alarmMaxdis">
-  <div class="alarm-icon">🚨</div>
-  <div class="alarm-title" id="alarmTitleText">Waktu Maxdis Selesai!</div>
-  <div class="alarm-sub" id="alarmSubText">Semua lorong harus sudah siap</div>
-  <button class="alarm-btn" onclick="selesaiMaxdis()">✓ Matikan Alarm</button>
-</div>
-
-<script>
-  const LORONG_NAMES = ['Lorong 1','Lorong 2','Lorong 3','Lorong 4','Lorong 5','Lorong 6'];
-  // Ditambahkan data endTime per lorong untuk tracking timer individual
-  let lorongData = LORONG_NAMES.map(name => ({ name, plu: 0, done: false, active: false, endTime: null, sisaDetik: 0 }));
-  let mainTimer = null; let mainEndTime = null; let lorongInterval = null;
-  let alarmAktifSekarang = "utama"; // Jenis alarm: "utama" atau "lorong"
-
-  function renderLorongGrid() {
-    const grid = document.getElementById('lorongGrid');
-    grid.innerHTML = '';
-    lorongData.forEach((l, i) => {
-      const div = document.createElement('div');
-      let classStatus = '';
-      if (l.done) classStatus = ' done';
-      else if (l.active) classStatus = ' active';
-
-      div.className = 'lorong-card' + classStatus;
-      div.setAttribute('onclick', `pilihLorong(${i}, event)`);
-      
-      // Menghitung teks sisa waktu di dalam kotak lorong
-      let timerTxt = '';
-      if (l.active && l.sisaDetik > 0) {
-        const mm = String(Math.floor(l.sisaDetik / 60)).padStart(2, '0');
-        const ss = String(l.sisaDetik % 60).padStart(2, '0');
-        timerTxt = `<div class="lorong-timer">⏳ ${mm}:${ss}</div>`;
-      } else if (l.done) {
-        timerTxt = '<div class="lorong-timer">✅ Selesai</div>';
-      }
-
-      div.innerHTML = `
-        <div class="lorong-label">Lorong</div>
-        <div class="lorong-name">${l.name.replace('Lorong ','')}</div>
-        <div class="lorong-plu-row">
-          <input class="lorong-plu-input" type="number" placeholder="0" value="${l.plu || ''}" 
-                 oninput="updatePLU(${i}, this.value)" onclick="event.stopPropagation();" />
-        </div>
-        ${timerTxt}
-      `;
-      grid.appendChild(div);
-    });
-  }
-
-  // FUNGSI KLIK PER LORONG UNTUK MENYALAKAN ALARM INDIVIDUAL
-  function pilihLorong(idx, event) {
-    if (lorongData[idx].plu === 0) { alert('Isi PLU lorong ini dulu!'); return; }
-
-    if (!lorongData[idx].active && !lorongData[idx].done) {
-      // KLIK 1: Mengaktifkan timer lorong berdasarkan rumus (PLU * 5 / 12) + 1
-      lorongData[idx].active = true;
-      const mins = Math.ceil((lorongData[idx].plu * 5 / 12) + 1);
-      lorongData[idx].sisaDetik = mins * 60;
-      lorongData[idx].endTime = new Date().getTime() + (mins * 60 * 1000);
-    } else if (lorongData[idx].active && !lorongData[idx].done) {
-      // KLIK 2: Tandai Selesai secara manual sebelum waktu habis
-      lorongData[idx].active = false;
-      lorongData[idx].done = true;
-      lorongData[idx].sisaDetik = 0;
-    } else {
-      // KLIK 3: Reset Lorong kembali ke normal
-      lorongData[idx].done = false;
-      lorongData[idx].active = false;
-      lorongData[idx].sisaDetik = 0;
-    }
-    renderLorongGrid();
-    startLorongTicker();
-  }
-
-  // Loop detikan untuk memantau semua sisa waktu lorong yang berjalan bersamaan
-  function startLorongTicker() {
-    if (lorongInterval) clearInterval(lorongInterval);
-    lorongInterval = setInterval(() => {
-      let adaYangAktif = false;
-      const sekarang = new Date().getTime();
-
-      lorongData.forEach((l, i) => {
-        if (l.active && l.endTime) {
-          adaYangAktif = true;
-          const diff = Math.max(0, Math.floor((l.endTime - sekarang) / 1000));
-          l.sisaDetik = diff;
-
-          if (diff === 0) {
-            l.active = false;
-            l.done = true; // Otomatis berubah hijau saat waktu habis
-            triggerAlarmLorong(l.name);
-          }
-        }
-      });
-
