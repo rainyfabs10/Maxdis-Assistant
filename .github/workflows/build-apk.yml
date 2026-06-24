@@ -17,17 +17,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Regenerate Gradle Wrapper
-        run: |
-          gradle wrapper --gradle-version 8.4
-          chmod +x gradlew
+      # Menggunakan setup-gradle resmi untuk otomatis mengonfigurasi lingkungan build yang valid
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          cache-disabled: true
 
       - name: Build APK
-        # Kita tambahkan argumen murni bawaan dari instruksi inisialisasi awal gradle
-        run: ./gradlew assembleDebug --no-daemon -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true
-        env:
-          GRADLE_OPTS: "-Dplugin.org.gradle.daemon=false"
-
+        # Jalankan perintah gradle global secara langsung untuk membypass gradlew lokal
+        run: gradle assembleDebug --no-daemon
+        
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
