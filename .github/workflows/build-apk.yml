@@ -17,14 +17,14 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Menggunakan setup-gradle resmi untuk otomatis mengonfigurasi lingkungan build yang valid
+      # Mengunci instalasi Gradle di versi 8.4 yang stabil untuk Android 14 (SDK 34)
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
+          gradle-version: '8.4'
           cache-disabled: true
 
       - name: Build APK
-        # Jalankan perintah gradle global secara langsung untuk membypass gradlew lokal
         run: gradle assembleDebug --no-daemon
         
       - name: Upload APK
