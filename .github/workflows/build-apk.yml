@@ -17,9 +17,17 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Grant execute permission
-        run: chmod +x gradlew
+      # Menggunakan sistem Gradle resmi dari GitHub, bypass gradlew lokal kamu
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
 
       - name: Build APK
-        # Ditambahkan --stacktrace dan --info agar kita bisa melihat letak baris error yang sebenarnya
-        run: ./gradlew assembleDebug --no-daemon --stacktrace --info
+        # Kita panggil perintah 'gradle' langsung, bukan './gradlew'
+        run: gradle assembleDebug --no-daemon
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MaxdisAssistant-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
