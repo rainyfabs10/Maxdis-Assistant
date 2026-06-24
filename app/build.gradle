@@ -22,6 +22,9 @@ android {
         debug {
             applicationIdSuffix ".debug"
             debuggable true
+            // Memaksa skema signing lama dan baru aktif bersamaan agar bisa ditimpa saat install ulang
+            v1SigningEnabled true
+            v2SigningEnabled true
         }
     }
 
