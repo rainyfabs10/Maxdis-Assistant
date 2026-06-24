@@ -17,16 +17,16 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Langkah krusial: Membuat ulang file gradlew yang baru, bersih, dan resmi
       - name: Regenerate Gradle Wrapper
         run: |
-          id
           gradle wrapper --gradle-version 8.4
           chmod +x gradlew
 
       - name: Build APK
-        # Jalankan build menggunakan gradlew baru yang dijamin bebas dari "-Xmx64m"
-        run: ./gradlew assembleDebug --no-daemon
+        # Kita tambahkan argumen murni bawaan dari instruksi inisialisasi awal gradle
+        run: ./gradlew assembleDebug --no-daemon -Pandroid.useAndroidX=true -Pandroid.enableJetifier=true
+        env:
+          GRADLE_OPTS: "-Dplugin.org.gradle.daemon=false"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
