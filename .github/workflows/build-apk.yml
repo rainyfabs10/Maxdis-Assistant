@@ -18,8 +18,7 @@ jobs:
           distribution: 'temurin'
 
       - name: Build APK
-        # Kita langsung mengeksekusi jar untuk mematikan script gradlew lokal yang korup
-        run: java -Xmx2048m -jar gradle_wrapper.jar assembleDebug --no-daemon
+        run: java -Xmx2048m -jar gradle-wrapper.jar assembleDebug --no-daemon
         env:
           GRADLE_OPTS: -Xmx2048m
 
@@ -28,5 +27,4 @@ jobs:
         with:
           name: MaxdisAssistant-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 
-          30
+          retention-days: 30
