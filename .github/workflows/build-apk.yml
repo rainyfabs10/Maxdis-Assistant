@@ -16,18 +16,17 @@ jobs:
         with:
           java-version: '17'
           distribution: 'temurin'
-          # Cache dinonaktifkan sementara untuk membuang sisa "-Xmx64m" yang korup
-
-      - name: Grant execute permission
-        run: chmod +x gradlew
 
       - name: Build APK
-        # Menambahkan argumen pembersih cache internal gradle secara paksa
-        run: ./gradlew assembleDebug --no-daemon --no-build-cache
+        # Kita langsung mengeksekusi jar untuk mematikan script gradlew lokal yang korup
+        run: java -Xmx2048m -jar gradle_wrapper.jar assembleDebug --no-daemon
+        env:
+          GRADLE_OPTS: -Xmx2048m
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MaxdisAssistant-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          retention-days: 
+          30
