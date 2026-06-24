@@ -69,9 +69,8 @@ public class MainActivity extends Activity {
         settings.setBuiltInZoomControls(false);
         settings.setDisplayZoomControls(false);
 
-        // Cache
+        // Cache (Sudah diperbaiki dengan menghapus setAppCacheEnabled jadul)
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setAppCacheEnabled(true);
 
         // Viewport
         settings.setUseWideViewPort(true);
@@ -221,10 +220,9 @@ public class MainActivity extends Activity {
         super.onDestroy();
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public void onBackPressed() {
         // Disable back button agar timer tidak ter-interrupt
-        // Atau bisa uncomment bawah untuk allow back:
-        // super.onBackPressed();
     }
 }
