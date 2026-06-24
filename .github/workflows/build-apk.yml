@@ -17,14 +17,21 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
+      - name: Grant execute permission
+        run: chmod +x gradlew
+
       - name: Build APK
-        run: java -Xmx2048m -jar gradle-wrapper.jar assembleDebug --no-daemon
-        env:
-          GRADLE_OPTS: -Xmx2048m
+        # Hapus variabel lingkungan bawaan yang korup secara paksa sebelum menjalankan gradlew
+        run: |
+          unset JAVA_OPTS
+          unset GRADLE_OPTS
+          export GRADLE_OPTS="-Xmx2048m -Dorg.gradle.jvmargs=-Xmx2048m"
+          ./gradlew assembleDebug --no-daemon --no-build-cache
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MaxdisAssistant-APK
           path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
+          retention-days
+          : 30
