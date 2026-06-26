@@ -3,10 +3,13 @@ on:
   push:
     branches: [ main, master ]
   workflow_dispatch:
+
 jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # Diperlukan agar robot bisa membuat halaman Release otomatis
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -17,7 +20,6 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # Mengunci instalasi Gradle di versi 8.4 yang stabil untuk Android 14 (SDK 34)
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
         with:
@@ -26,11 +28,15 @@ jobs:
 
       - name: Build APK
         run: gradle assembleDebug --no-daemon
-        
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+
+      # Fitur Baru: Otomatis upload ke GitHub Releases agar didownload langsung berbentuk .apk murni
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: MaxdisAssistant.apk       # Mengubah nama hasil jadi dengan ekstensi langsung .apk
-          path: app/build/outputs/apk/debug/app-debug.apk
-          retention-days: 30
-          compression-level: 0            # Menonaktifkan kompresi ZIP agar file turun apa adanya
+          tag_name: v1.0.${{ github.run_number }}
+          name: Maxdis Assistant v1.0.${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
