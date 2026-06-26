@@ -39,23 +39,26 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     private Handler alarmHandler;
     private Runnable alarmRunnable;
     private boolean alarmRunning = false;
-
     private TextToSpeech tts;
+    private boolean ttsReady = false;
     private AlarmReceiver alarmReceiver;
-    
-    private boolean isAlarmConfigEnabled = true;
-    private boolean isToko24JamEnabled = false;
+
+    private boolean isAlarmOn = true;
+    private boolean isToko24On = false;
+
+    // Jadwal maxdis: jam 10, 14, 18, 21 → alarm 1 jam sebelum = 9, 13, 17, 20
+    private static final int[] ALARM_HOURS = {9, 13, 17, 20};
+    private static final int ALARM_HOUR_24JAM = 2; // 1 jam sebelum 03:00
+    private static final String PREF_NAME = "MaxdisPrefs";
+    private static final String ACTION_ALARM = "com.alfamart.maxdis.ALARM";
 
     @SuppressLint({"SetJavaScriptEnabled", "AddJavascriptInterface"})
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        );
+        getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                WindowManager.LayoutParams.FLAG_FULLSCREEN);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         setContentView(R.layout.activity_main);
@@ -64,180 +67,228 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         alarmHandler = new Handler(Looper.getMainLooper());
         tts = new TextToSpeech(this, this);
 
-        SharedPreferences prefs = getSharedPreferences("MaxdisPrefs", MODE_PRIVATE);
-        isAlarmConfigEnabled = prefs.getBoolean("daily_alarm_on", true);
-        isToko24JamEnabled = prefs.getBoolean("toko_24h_on", false);
+        // Muat pengaturan tersimpan
+        SharedPreferences prefs = getSharedPreferences(PREF_NAME, MODE_PRIVATE);
+        isAlarmOn = prefs.getBoolean("alarm_on", true);
+        isToko24On = prefs.getBoolean("toko24_on", false);
 
         webView = findViewById(R.id.webview);
         setupWebView();
         webView.loadUrl("file:///android_asset/index.html");
 
-        setupDailyAlarms();
-
+        // Daftarkan receiver alarm harian
         alarmReceiver = new AlarmReceiver();
+        IntentFilter filter = new IntentFilter(ACTION_ALARM);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            registerReceiver(alarmReceiver, new IntentFilter("com.alfamart.maxdis.START_ALARM"), Context.RECEIVER_EXPORTED);
+            registerReceiver(alarmReceiver, filter, Context.RECEIVER_EXPORTED);
         } else {
-            registerReceiver(alarmReceiver, new IntentFilter("com.alfamart.maxdis.START_ALARM"));
+            registerReceiver(alarmReceiver, filter);
         }
+
+        // Setup alarm harian
+        setupDailyAlarms();
     }
 
     @Override
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
-            tts.setLanguage(new Locale("id", "ID"));
+            int result = tts.setLanguage(new Locale("id", "ID"));
+            if (result == TextToSpeech.LANG_AVAILABLE || result == TextToSpeech.LANG_COUNTRY_AVAILABLE) {
+                ttsReady = true;
+            }
         }
     }
 
-    private void speak(String text) {
-        if (tts != null) {
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "MaxdisTTS");
-        }
+    private void speak(final String text) {
+        alarmHandler.post(() -> {
+            if (tts != null && ttsReady) {
+                tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts_" + System.currentTimeMillis());
+            }
+        });
+    }
+
+    // Ucapkan teks berulang selama alarm menyala
+    private void speakLoop(final String text) {
+        if (!alarmRunning) return;
+        speak(text);
+        alarmHandler.postDelayed(() -> {
+            if (alarmRunning) speakLoop(text);
+        }, 3000);
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setSupportZoom(false);
-        settings.setBuiltInZoomControls(false);
-        settings.setDisplayZoomControls(false);
-        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setUseWideViewPort(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setTextZoom(100);
-
+        WebSettings s = webView.getSettings();
+        s.setJavaScriptEnabled(true);
+        s.setDomStorageEnabled(true);
+        s.setSupportZoom(false);
+        s.setBuiltInZoomControls(false);
+        s.setDisplayZoomControls(false);
+        s.setCacheMode(WebSettings.LOAD_DEFAULT);
+        s.setUseWideViewPort(true);
+        s.setLoadWithOverviewMode(true);
+        s.setTextZoom(100);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            settings.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
+            s.setMixedContentMode(WebSettings.MIXED_CONTENT_ALWAYS_ALLOW);
         }
-
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setScrollBarStyle(View.SCROLLBARS_INSIDE_OVERLAY);
         webView.setOverScrollMode(View.OVER_SCROLL_NEVER);
-
         webView.setWebViewClient(new WebViewClient() {
             @Override
-            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            public boolean shouldOverrideUrlLoading(WebView v, String url) {
                 return !url.startsWith("file://");
             }
         });
-
         webView.setWebChromeClient(new WebChromeClient());
         webView.addJavascriptInterface(new AndroidBridge(), "AndroidBridge");
     }
 
+    // ── ALARM HARIAN ─────────────────────────────────────────────────────────
+
     private void setupDailyAlarms() {
-        int[] targetHours = {2, 9, 13, 17, 20};
-        AlarmManager alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return;
 
-        for (int i = 0; i < targetHours.length; i++) {
-            Intent intent = new Intent("com.alfamart.maxdis.START_ALARM");
-            intent.putExtra("target_hour", targetHours[i]);
-            
-            PendingIntent pendingIntent = PendingIntent.getBroadcast(
-                this, i, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
-            );
+        // Batalkan semua alarm dulu
+        cancelAllAlarms(am);
+        if (!isAlarmOn) return;
 
-            if (!isAlarmConfigEnabled) {
-                if (alarmManager != null) alarmManager.cancel(pendingIntent);
-                continue;
-            }
-
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(System.currentTimeMillis());
-            calendar.set(Calendar.HOUR_OF_DAY, targetHours[i]);
-            calendar.set(Calendar.MINUTE, 0);
-            calendar.set(Calendar.SECOND, 0);
-
-            if (calendar.getTimeInMillis() <= System.currentTimeMillis()) {
-                calendar.add(Calendar.DAY_OF_MONTH, 1);
-            }
-
-            if (alarmManager != null) {
-                alarmManager.setRepeating(
-                    AlarmManager.RTC_WAKEUP,
-                    calendar.getTimeInMillis(),
-                    AlarmManager.INTERVAL_DAY,
-                    pendingIntent
-                );
-            }
+        // Set alarm untuk setiap jam
+        for (int i = 0; i < ALARM_HOURS.length; i++) {
+            setDailyAlarm(am, ALARM_HOURS[i], i);
+        }
+        // Alarm toko 24 jam (jam 02:00)
+        if (isToko24On) {
+            setDailyAlarm(am, ALARM_HOUR_24JAM, 99);
         }
     }
 
-    // ─── JavaScript Bridge ───────────────────────────────────────────────────
+    private void setDailyAlarm(AlarmManager am, int hour, int requestCode) {
+        Intent intent = new Intent(ACTION_ALARM);
+        intent.putExtra("hour", hour);
+        PendingIntent pi = PendingIntent.getBroadcast(this, requestCode, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, hour);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+        if (cal.getTimeInMillis() <= System.currentTimeMillis()) {
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+        am.setRepeating(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(),
+                AlarmManager.INTERVAL_DAY, pi);
+    }
+
+    private void cancelAllAlarms(AlarmManager am) {
+        int[] allCodes = {0, 1, 2, 3, 99};
+        for (int code : allCodes) {
+            Intent intent = new Intent(ACTION_ALARM);
+            PendingIntent pi = PendingIntent.getBroadcast(this, code, intent,
+                    PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+            if (pi != null) am.cancel(pi);
+        }
+    }
+
+    // ── ALARM RECEIVER ────────────────────────────────────────────────────────
+
+    public class AlarmReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!isAlarmOn) return;
+            int hour = intent.getIntExtra("hour", -1);
+            if (hour < 0) return;
+
+            // Tampilkan di UI WebView
+            int jadwal = hour + 1; // jam pengingat + 1 = jam maxdis sebenarnya
+            runOnUiThread(() -> {
+                webView.evaluateJavascript("tampilkanAlarmHarian(" + jadwal + ");", null);
+                // Native alarm + TTS
+                alarmRunning = true;
+                startNativeAlarm();
+                speakLoop("saatnya maxdisplay");
+            });
+        }
+    }
+
+    // ── JAVASCRIPT BRIDGE ─────────────────────────────────────────────────────
 
     public class AndroidBridge {
 
-        // Alarm Utama (Total Waktu Habis)
+        // Alarm: Waktu maxdis total habis
         @JavascriptInterface
         public void startAlarm() {
             runOnUiThread(() -> {
                 alarmRunning = true;
                 startNativeAlarm();
-                speak("selesaikan maxdisplay");
+                speakLoop("selesaikan max display sekarang");
             });
         }
 
-        // BARU: Alarm Khusus Per Lorong (Saat Waktu Lorong Individual Habis)
+        // Alarm: Waktu per lorong habis
         @JavascriptInterface
         public void startAlarmLorong() {
             runOnUiThread(() -> {
                 alarmRunning = true;
                 startNativeAlarm();
-                speak("selesaikan lorong"); // Permintaan bunyi kustom
+                speakLoop("selesaikan lorong sekarang");
             });
         }
 
+        // Alarm: Pengingat harian (dipanggil dari JS jika perlu)
+        @JavascriptInterface
+        public void startAlarmHarian() {
+            runOnUiThread(() -> {
+                alarmRunning = true;
+                startNativeAlarm();
+                speakLoop("saatnya maxdisplay");
+            });
+        }
+
+        // Stop semua alarm
         @JavascriptInterface
         public void stopAlarm() {
             runOnUiThread(() -> {
                 alarmRunning = false;
                 stopNativeAlarm();
+                if (tts != null) tts.stop();
             });
         }
 
+        // Kirim state toggle ke WebView saat app dibuka
         @JavascriptInterface
         public void requestToggleState() {
-            runOnUiThread(() -> {
-                webView.evaluateJavascript("setTogglesDariAndroid(" + isAlarmConfigEnabled + ", " + isToko24JamEnabled + ");", null);
-            });
+            runOnUiThread(() -> webView.evaluateJavascript(
+                "setTogglesDariAndroid(" + isAlarmOn + "," + isToko24On + ");", null));
         }
 
+        // Simpan pengaturan dari WebView
         @JavascriptInterface
         public void saveAlarmSettings(boolean alarmOn, boolean toko24On) {
             runOnUiThread(() -> {
-                isAlarmConfigEnabled = alarmOn;
-                isToko24JamEnabled = toko24On;
-
-                SharedPreferences.Editor editor = getSharedPreferences("MaxdisPrefs", MODE_PRIVATE).edit();
-                editor.putBoolean("daily_alarm_on", alarmOn);
-                editor.putBoolean("toko_24h_on", toko24On);
-                editor.apply();
-
+                isAlarmOn = alarmOn;
+                isToko24On = toko24On;
+                getSharedPreferences(PREF_NAME, MODE_PRIVATE).edit()
+                        .putBoolean("alarm_on", alarmOn)
+                        .putBoolean("toko24_on", toko24On)
+                        .apply();
                 setupDailyAlarms();
-                Toast.makeText(MainActivity.this, "Pengaturan alarm diperbarui", Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this,
+                        alarmOn ? "Alarm pengingat aktif ✓" : "Alarm pengingat dimatikan",
+                        Toast.LENGTH_SHORT).show();
             });
         }
     }
 
-    public class AlarmReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            int hour = intent.getIntExtra("target_hour", -1);
-            if (isAlarmConfigEnabled) {
-                if (hour == 2 && !isToko24JamEnabled) {
-                    return; 
-                }
-                Toast.makeText(context, "Saatnya Maxdisplay!", Toast.LENGTH_LONG).show();
-                speak("saatnya maxdisplay");
-            }
-        }
-    }
+    // ── NATIVE ALARM (TONE + VIBRATE) ─────────────────────────────────────────
 
     private void startNativeAlarm() {
         stopNativeAlarm();
-        long[] pattern = {0, 500, 300, 500, 300, 500};
+        // Vibrasi berulang
+        long[] pattern = {0, 600, 300, 600, 300, 600};
         if (vibrator != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 vibrator.vibrate(VibrationEffect.createWaveform(pattern, 0));
@@ -245,33 +296,34 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                 vibrator.vibrate(pattern, 0);
             }
         }
+        // Tone beep
         try {
-            toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 90);
+            toneGenerator = new ToneGenerator(AudioManager.STREAM_ALARM, 100);
         } catch (Exception e) { e.printStackTrace(); }
 
         alarmRunnable = new Runnable() {
             @Override
             public void run() {
                 if (!alarmRunning) return;
-                if (toneGenerator != null) {
-                    toneGenerator.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 400);
-                }
-                alarmHandler.postDelayed(this, 1000);
+                if (toneGenerator != null)
+                    toneGenerator.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 500);
+                alarmHandler.postDelayed(this, 1200);
             }
         };
         alarmHandler.post(alarmRunnable);
     }
 
     private void stopNativeAlarm() {
-        alarmRunning = false;
-        if (alarmHandler != null && alarmRunnable != null) alarmHandler.removeCallbacks(alarmRunnable);
+        if (alarmHandler != null && alarmRunnable != null)
+            alarmHandler.removeCallbacks(alarmRunnable);
         if (toneGenerator != null) {
-            toneGenerator.stopTone();
-            toneGenerator.release();
+            try { toneGenerator.stopTone(); toneGenerator.release(); } catch(Exception e){}
             toneGenerator = null;
         }
         if (vibrator != null) vibrator.cancel();
     }
+
+    // ── LIFECYCLE ─────────────────────────────────────────────────────────────
 
     @Override
     protected void onPause() { super.onPause(); if (webView != null) webView.onPause(); }
@@ -288,9 +340,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         super.onDestroy();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public void onBackPressed() {
-        // Disabled
-    }
+    public void onBackPressed() { /* Disabled agar timer tidak terganggu */ }
 }
