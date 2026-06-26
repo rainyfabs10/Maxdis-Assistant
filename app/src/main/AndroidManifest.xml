@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Alarm & background -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <!-- Untuk AlarmManager exact (Android 12+) -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- Notifikasi (Android 13+) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Exact alarm (Android 12+) -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <!-- Internet untuk Google Fonts di HTML -->
+    <uses-permission android:name="android.permission.INTERNET" />
 
     <application
         android:allowBackup="true"
@@ -19,6 +25,7 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="false">
 
+        <!-- Activity utama -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -31,15 +38,26 @@
             </intent-filter>
         </activity>
 
-        <!-- Receiver untuk alarm harian (harus exported agar AlarmManager bisa trigger) -->
+        <!-- Receiver: menerima alarm harian & boot completed -->
         <receiver
-            android:name=".MainActivity$AlarmReceiver"
+            android:name=".AlarmReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.alfamart.maxdis.ALARM" />
+                <action android:name="com.alfamart.maxdis.STOP_ALARM" />
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- Foreground Service: bunyi alarm di background -->
+        <service
+            android:name=".AlarmService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="alarm" />
+        </service>
 
     </application>
 </manifest>
