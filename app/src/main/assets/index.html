@@ -680,14 +680,23 @@ function mulaiMaxdis() {
   if (!startVal) { alert('Isi dulu waktu mulai!'); return; }
   if (total === 0) { alert('Isi dulu total PLU minimal 1 lorong!'); return; }
 
-  const [sh, sm] = startVal.split(':').map(Number);
-  const start = new Date();
-  start.setHours(sh, sm, 0, 0);
-  if (start < new Date()) start.setDate(start.getDate() + 1);
-
-  // Rumus: (total PLU × 5 ÷ 60) + 1 menit → konversi ke detik
+  // Rumus: (total PLU × 5 ÷ 60) + 1 menit → dalam detik
   const totalSecs = Math.ceil(((total * 5 / 60) + 1) * 60);
-  mainEndTime = new Date(start.getTime() + totalSecs * 1000);
+
+  // Waktu mulai dari input → deadline = waktu mulai + durasi
+  // Jika waktu mulai sudah lewat, countdown mulai dari SEKARANG
+  const [sh, sm] = startVal.split(':').map(Number);
+  const startRef = new Date();
+  startRef.setHours(sh, sm, 0, 0);
+
+  const now = new Date();
+  if (startRef <= now) {
+    // Sudah lewat atau sama → countdown dari sekarang
+    mainEndTime = new Date(now.getTime() + totalSecs * 1000);
+  } else {
+    // Belum mulai → countdown dari waktu mulai yang diset
+    mainEndTime = new Date(startRef.getTime() + totalSecs * 1000);
+  }
 
   document.getElementById('mainTimerCard').classList.add('visible');
   const btn = document.getElementById('btnMulai');
