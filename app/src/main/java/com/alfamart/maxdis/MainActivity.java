@@ -168,6 +168,16 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         }
 
         @JavascriptInterface
+        public void stopAlarmHarian() {
+            runOnUiThread(() -> {
+                // Stop AlarmService jika sedang berjalan
+                Intent stopIntent = new Intent(MainActivity.this, AlarmService.class);
+                stopIntent.setAction(AlarmService.ACTION_STOP);
+                startService(stopIntent);
+            });
+        }
+
+        @JavascriptInterface
         public void requestToggleState() {
             runOnUiThread(() -> webView.evaluateJavascript(
                 "setTogglesDariAndroid(" + isAlarmOn + "," + isToko24On + ");", null));
