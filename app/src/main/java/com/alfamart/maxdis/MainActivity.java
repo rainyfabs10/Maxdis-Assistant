@@ -2,7 +2,7 @@ package com.alfamart.maxdis;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.NotificationManager;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
@@ -64,8 +64,20 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         setupWebView();
         webView.loadUrl("file:///android_asset/index.html");
 
-        // Pastikan alarm terjadwal
+        // Jadwalkan alarm harian
         AlarmScheduler.scheduleAll(this);
+
+        // Start KeepAliveService agar alarm tetap jalan di background MIUI
+        startKeepAlive();
+    }
+
+    private void startKeepAlive() {
+        Intent intent = new Intent(this, KeepAliveService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(intent);
+        } else {
+            startService(intent);
+        }
     }
 
     // ── TTS ──────────────────────────────────────────────────────────────────
@@ -74,7 +86,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
     public void onInit(int status) {
         if (status == TextToSpeech.SUCCESS) {
             int r = tts.setLanguage(new Locale("id", "ID"));
-            ttsReady = (r == TextToSpeech.LANG_AVAILABLE || r == TextToSpeech.LANG_COUNTRY_AVAILABLE);
+            ttsReady = (r == TextToSpeech.LANG_AVAILABLE
+                     || r == TextToSpeech.LANG_COUNTRY_AVAILABLE);
         }
     }
 
@@ -83,7 +96,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts_" + System.currentTimeMillis());
     }
 
-    /** Ucapkan teks berulang selama alarm aktif */
     private void startTtsLoop(final String text) {
         ttsLoopRunnable = new Runnable() {
             @Override public void run() {
@@ -95,7 +107,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         alarmHandler.postDelayed(ttsLoopRunnable, 800);
     }
 
-    // ── WEBVIEW SETUP ─────────────────────────────────────────────────────────
+    // ── WEBVIEW ───────────────────────────────────────────────────────────────
 
     @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
@@ -128,7 +140,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     public class AndroidBridge {
 
-        /** Alarm: waktu maxdis total habis */
         @JavascriptInterface
         public void startAlarm() {
             runOnUiThread(() -> {
@@ -138,7 +149,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             });
         }
 
-        /** Alarm: waktu per lorong habis */
         @JavascriptInterface
         public void startAlarmLorong() {
             runOnUiThread(() -> {
@@ -148,7 +158,6 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             });
         }
 
-        /** Stop semua alarm */
         @JavascriptInterface
         public void stopAlarm() {
             runOnUiThread(() -> {
@@ -158,14 +167,12 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
             });
         }
 
-        /** Kirim state toggle ke WebView */
         @JavascriptInterface
         public void requestToggleState() {
             runOnUiThread(() -> webView.evaluateJavascript(
                 "setTogglesDariAndroid(" + isAlarmOn + "," + isToko24On + ");", null));
         }
 
-        /** Simpan pengaturan & jadwal ulang alarm */
         @JavascriptInterface
         public void saveAlarmSettings(boolean alarmOn, boolean toko24On) {
             runOnUiThread(() -> {
@@ -176,6 +183,14 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
                         .putBoolean(AlarmReceiver.PREF_TOKO24, toko24On)
                         .apply();
                 AlarmScheduler.scheduleAll(MainActivity.this);
+
+                // Kelola KeepAliveService sesuai toggle
+                if (alarmOn) {
+                    startKeepAlive();
+                } else {
+                    stopService(new Intent(MainActivity.this, KeepAliveService.class));
+                }
+
                 Toast.makeText(MainActivity.this,
                         alarmOn ? "Alarm pengingat aktif ✓" : "Alarm pengingat dimatikan",
                         Toast.LENGTH_SHORT).show();
@@ -183,7 +198,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         }
     }
 
-    // ── NATIVE ALARM (BEEP + VIBRATE) ─────────────────────────────────────────
+    // ── NATIVE ALARM ─────────────────────────────────────────────────────────
 
     private void startNativeAlarm() {
         stopNativeAlarm();
@@ -222,8 +237,8 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
 
     // ── LIFECYCLE ─────────────────────────────────────────────────────────────
 
-    @Override protected void onPause()   { super.onPause();   if (webView != null) webView.onPause(); }
-    @Override protected void onResume()  { super.onResume();  if (webView != null) webView.onResume(); }
+    @Override protected void onPause()  { super.onPause();  if (webView != null) webView.onPause(); }
+    @Override protected void onResume() { super.onResume(); if (webView != null) webView.onResume(); }
 
     @Override
     protected void onDestroy() {
@@ -231,6 +246,7 @@ public class MainActivity extends Activity implements TextToSpeech.OnInitListene
         if (tts != null) { tts.stop(); tts.shutdown(); }
         if (webView != null) { webView.stopLoading(); webView.destroy(); }
         super.onDestroy();
+        // KeepAliveService tetap jalan meski activity destroy
     }
 
     @Override public void onBackPressed() { /* Disabled */ }
