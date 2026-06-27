@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- Izin background & alarm -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.INTERNET" />
@@ -11,8 +10,9 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
-    <!-- MIUI/HyperOS: izin autostart & background -->
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- MIUI specific -->
     <uses-permission android:name="miui.permission.START_IN_BACKGROUND" />
     <uses-permission android:name="miui.permission.AUTOSTART" />
 
@@ -26,53 +26,49 @@
         android:hardwareAccelerated="true"
         android:usesCleartextTraffic="false">
 
-        <!-- Activity utama -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:screenOrientation="portrait"
-            android:windowSoftInputMode="adjustResize">
+            android:windowSoftInputMode="adjustResize"
+            android:showOnLockScreen="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
-        <!-- Receiver: alarm harian -->
-        <receiver
-            android:name=".AlarmReceiver"
-            android:exported="true">
+        <!-- Receiver alarm harian -->
+        <receiver android:name=".AlarmReceiver" android:exported="true">
             <intent-filter>
                 <action android:name="com.alfamart.maxdis.ALARM" />
             </intent-filter>
         </receiver>
 
-        <!-- Receiver: boot completed (MIUI quickboot juga) -->
-        <receiver
-            android:name=".BootReceiver"
-            android:exported="true">
+        <!-- Receiver boot & package replace -->
+        <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter android:priority="999">
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON" />
                 <action android:name="com.htc.intent.action.QUICKBOOT_POWERON" />
-                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
-                <!-- MIUI specific -->
                 <action android:name="miui.intent.action.LOCKED_BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
 
-        <!-- Service: alarm harian berbunyi di background -->
+        <!-- Service alarm — bunyi di background -->
         <service
             android:name=".AlarmService"
             android:exported="false"
-            android:foregroundServiceType="specialUse">
+            android:foregroundServiceType="specialUse"
+            android:stopWithTask="false">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="alarm" />
         </service>
 
-        <!-- Service: jaga proses tetap hidup di MIUI/HyperOS -->
+        <!-- Service keepalive — jaga proses hidup -->
         <service
             android:name=".KeepAliveService"
             android:exported="false"
