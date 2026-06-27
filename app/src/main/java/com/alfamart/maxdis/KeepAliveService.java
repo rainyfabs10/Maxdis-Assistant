@@ -14,17 +14,15 @@ import android.os.Looper;
 import androidx.core.app.NotificationCompat;
 
 /**
- * Foreground service ringan yang selalu jalan di background.
- * Tugasnya: jaga proses app tetap hidup di MIUI/HyperOS
- * agar AlarmManager bisa trigger tepat waktu.
- *
- * Notifikasinya sangat kecil (priority MIN) — hampir tidak terlihat.
+ * Foreground service ringan — jaga proses hidup di MIUI/HyperOS.
+ * START_STICKY = Android restart otomatis jika dikill.
+ * onDestroy = restart diri sendiri sebagai failsafe.
  */
 public class KeepAliveService extends Service {
 
-    private static final String CHANNEL_ID  = "maxdis_keepalive";
-    private static final int    NOTIF_ID    = 9001;
-    private static final long   PING_INTERVAL = 60 * 1000L; // 1 menit
+    private static final String CH_ID   = "maxdis_ka_v3";
+    private static final int    NOTIF_ID = 4002;
+    private static final long   INTERVAL = 15 * 60 * 1000L; // 15 menit
 
     private Handler handler;
     private Runnable pingRunnable;
@@ -38,53 +36,50 @@ public class KeepAliveService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        // Foreground dengan notifikasi minimal
-        startForeground(NOTIF_ID, buildKeepAliveNotif());
+        startForeground(NOTIF_ID, buildNotif());
 
-        // Ping tiap 1 menit — pastikan AlarmScheduler masih terdaftar
-        pingRunnable = new Runnable() {
-            @Override
-            public void run() {
-                AlarmScheduler.scheduleAll(getApplicationContext());
-                handler.postDelayed(this, PING_INTERVAL);
-            }
-        };
-        handler.postDelayed(pingRunnable, PING_INTERVAL);
+        // Ping tiap 15 menit: pastikan alarm masih terjadwal
+        if (pingRunnable == null) {
+            pingRunnable = new Runnable() {
+                @Override public void run() {
+                    AlarmScheduler.scheduleAll(getApplicationContext());
+                    handler.postDelayed(this, INTERVAL);
+                }
+            };
+            handler.postDelayed(pingRunnable, INTERVAL);
+        }
 
-        // START_STICKY → Android/MIUI restart service ini jika dikill
-        return START_STICKY;
+        return START_STICKY; // restart otomatis jika dikill sistem
     }
 
     private void createChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm = getSystemService(NotificationManager.class);
+        if (nm.getNotificationChannel(CH_ID) != null) return; // sudah ada
 
         NotificationChannel ch = new NotificationChannel(
-                CHANNEL_ID, "Maxdis Berjalan", NotificationManager.IMPORTANCE_MIN);
-        ch.setDescription("Menjaga alarm maxdisplay tetap aktif");
-        ch.setShowBadge(false);
+                CH_ID, "Maxdis Berjalan", NotificationManager.IMPORTANCE_MIN);
         ch.setSound(null, null);
-        ch.enableLights(false);
         ch.enableVibration(false);
+        ch.setShowBadge(false);
         nm.createNotificationChannel(ch);
     }
 
-    private Notification buildKeepAliveNotif() {
-        Intent openIntent = new Intent(this, MainActivity.class);
-        openIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent piOpen = PendingIntent.getActivity(
-                this, 0, openIntent,
+    private Notification buildNotif() {
+        Intent open = new Intent(this, MainActivity.class);
+        open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pi = PendingIntent.getActivity(this, 0, open,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        return new NotificationCompat.Builder(this, CHANNEL_ID)
+        return new NotificationCompat.Builder(this, CH_ID)
                 .setSmallIcon(android.R.drawable.ic_menu_recent_history)
                 .setContentTitle("Maxdis Assistant")
-                .setContentText("Alarm pengingat maxdisplay aktif")
-                .setPriority(NotificationCompat.PRIORITY_MIN)  // paling kecil, nyaris tersembunyi
+                .setContentText("Alarm pengingat aktif di background")
+                .setPriority(NotificationCompat.PRIORITY_MIN)
                 .setOngoing(true)
                 .setShowWhen(false)
                 .setSilent(true)
-                .setContentIntent(piOpen)
+                .setContentIntent(pi)
                 .build();
     }
 
@@ -92,16 +87,18 @@ public class KeepAliveService extends Service {
     public void onDestroy() {
         if (handler != null && pingRunnable != null)
             handler.removeCallbacks(pingRunnable);
-        // Restart diri sendiri jika dikill
-        Intent restart = new Intent(this, KeepAliveService.class);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(restart);
-        } else {
-            startService(restart);
-        }
+
+        // Failsafe: restart diri sendiri
+        handler.postDelayed(() -> {
+            Intent restart = new Intent(getApplicationContext(), KeepAliveService.class);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O)
+                startForegroundService(restart);
+            else
+                startService(restart);
+        }, 1000);
+
         super.onDestroy();
     }
 
-    @Override
-    public IBinder onBind(Intent intent) { return null; }
+    @Override public IBinder onBind(Intent intent) { return null; }
 }

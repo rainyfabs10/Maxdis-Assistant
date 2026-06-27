@@ -5,18 +5,18 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Build;
+import android.util.Log;
 
 import java.util.Calendar;
 
-/**
- * Helper untuk menjadwalkan / membatalkan semua alarm harian maxdisplay.
- * Dipanggil dari MainActivity dan AlarmReceiver (saat boot).
- */
 public class AlarmScheduler {
 
-    // Alarm 1 jam sebelum jadwal maxdis: 10, 14, 18, 21 → 9, 13, 17, 20
-    private static final int[] ALARM_HOURS    = {9, 13, 17, 20};
-    private static final int   HOUR_24JAM     = 2; // 1 jam sebelum sesi 03:00
+    private static final String TAG = "AlarmScheduler";
+
+    // 1 jam sebelum jadwal maxdis: 10,14,18,21 → 9,13,17,20
+    private static final int[] ALARM_HOURS = {9, 13, 17, 20};
+    private static final int   HOUR_24JAM  = 2; // 1 jam sebelum 03:00
 
     public static void scheduleAll(Context ctx) {
         SharedPreferences prefs = ctx.getSharedPreferences(
@@ -28,51 +28,94 @@ public class AlarmScheduler {
         if (am == null) return;
 
         cancelAll(ctx, am);
-        if (!alarmOn) return;
+        if (!alarmOn) { Log.d(TAG, "Alarm OFF, skipping schedule"); return; }
 
         for (int i = 0; i < ALARM_HOURS.length; i++) {
-            schedule(ctx, am, ALARM_HOURS[i], i);
+            scheduleOne(ctx, am, ALARM_HOURS[i], i);
         }
         if (toko24On) {
-            schedule(ctx, am, HOUR_24JAM, 99);
+            scheduleOne(ctx, am, HOUR_24JAM, 99);
         }
     }
 
-    private static void schedule(Context ctx, AlarmManager am, int hour, int reqCode) {
-        PendingIntent pi = buildPendingIntent(ctx, hour, reqCode);
+    private static void scheduleOne(Context ctx, AlarmManager am, int hour, int reqCode) {
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.HOUR_OF_DAY, hour);
+        cal.set(Calendar.MINUTE, 0);
+        cal.set(Calendar.SECOND, 0);
+        cal.set(Calendar.MILLISECOND, 0);
+
+        // Jika jam sudah lewat hari ini → jadwalkan besok
+        if (cal.getTimeInMillis() <= System.currentTimeMillis()) {
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+        }
+
+        PendingIntent pi = buildPI(ctx, hour, reqCode);
+
+        // Gunakan setExactAndAllowWhileIdle agar tidak diblock Doze/MIUI
+        // Untuk repeat: kita reschedule manual di AlarmReceiver setelah trigger
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+        } else {
+            am.setExact(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+        }
+
+        Log.d(TAG, "Scheduled alarm jam " + hour + ":00 → " + cal.getTime());
+    }
+
+    /** Jadwalkan ulang untuk besok — dipanggil dari AlarmReceiver setelah trigger */
+    public static void rescheduleOne(Context ctx, int hour, int reqCode) {
+        AlarmManager am = (AlarmManager) ctx.getSystemService(Context.ALARM_SERVICE);
+        if (am == null) return;
 
         Calendar cal = Calendar.getInstance();
         cal.set(Calendar.HOUR_OF_DAY, hour);
         cal.set(Calendar.MINUTE, 0);
         cal.set(Calendar.SECOND, 0);
         cal.set(Calendar.MILLISECOND, 0);
-        if (cal.getTimeInMillis() <= System.currentTimeMillis()) {
-            cal.add(Calendar.DAY_OF_MONTH, 1);
+        cal.add(Calendar.DAY_OF_MONTH, 1); // selalu besok
+
+        PendingIntent pi = buildPI(ctx, hour, reqCode);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
+        } else {
+            am.setExact(AlarmManager.RTC_WAKEUP, cal.getTimeInMillis(), pi);
         }
 
-        // setRepeating setiap hari
-        am.setRepeating(AlarmManager.RTC_WAKEUP,
-                cal.getTimeInMillis(),
-                AlarmManager.INTERVAL_DAY,
-                pi);
+        Log.d(TAG, "Rescheduled alarm jam " + hour + ":00 → besok " + cal.getTime());
     }
 
     public static void cancelAll(Context ctx, AlarmManager am) {
         int[] codes = {0, 1, 2, 3, 99};
-        for (int code : codes) {
-            // hour tidak penting untuk cancel, cukup reqCode sama
-            PendingIntent pi = PendingIntent.getBroadcast(ctx, code,
-                    new Intent(AlarmReceiver.ACTION_ALARM),
+        int[] hours = {9, 13, 17, 20, 2};
+        for (int i = 0; i < codes.length; i++) {
+            PendingIntent pi = PendingIntent.getBroadcast(ctx, codes[i],
+                    buildIntent(ctx, hours[i]),
                     PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
             if (pi != null) am.cancel(pi);
         }
     }
 
-    private static PendingIntent buildPendingIntent(Context ctx, int hour, int reqCode) {
+    private static PendingIntent buildPI(Context ctx, int hour, int reqCode) {
+        return PendingIntent.getBroadcast(ctx, reqCode, buildIntent(ctx, hour),
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    private static Intent buildIntent(Context ctx, int hour) {
         Intent intent = new Intent(ctx, AlarmReceiver.class);
         intent.setAction(AlarmReceiver.ACTION_ALARM);
         intent.putExtra(AlarmReceiver.EXTRA_HOUR, hour);
-        return PendingIntent.getBroadcast(ctx, reqCode, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        intent.putExtra(AlarmReceiver.EXTRA_REQ_CODE, getReqCode(hour));
+        return intent;
+    }
+
+    private static int getReqCode(int hour) {
+        if (hour == 9)  return 0;
+        if (hour == 13) return 1;
+        if (hour == 17) return 2;
+        if (hour == 20) return 3;
+        if (hour == 2)  return 99;
+        return 0;
     }
 }
