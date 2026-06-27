@@ -22,14 +22,12 @@ import java.util.Locale;
 
 public class AlarmService extends Service implements TextToSpeech.OnInitListener {
 
-    // Action yang dikirim langsung ke Service ini
     public static final String ACTION_START = "com.alfamart.maxdis.svc.START";
     public static final String ACTION_STOP  = "com.alfamart.maxdis.svc.STOP";
 
-    private static final String CHANNEL_ALARM   = "maxdis_alarm_ch";
-    private static final String CHANNEL_REMIND  = "maxdis_remind_ch";
-    private static final int    NOTIF_ALARM_ID  = 2001;
-    private static final int    NOTIF_REMIND_ID = 2002;
+    private static final String CHANNEL_ID  = "maxdis_alarm_v2";
+    private static final int    NOTIF_ID    = 3001;
+    private static final int    NOTIF_REMIND = 3002;
 
     private TextToSpeech tts;
     private boolean ttsReady = false;
@@ -46,7 +44,7 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
         handler  = new Handler(Looper.getMainLooper());
         vibrator = (Vibrator) getSystemService(VIBRATOR_SERVICE);
         tts      = new TextToSpeech(this, this);
-        createChannels();
+        createChannel();
     }
 
     @Override
@@ -55,23 +53,20 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
 
         String action = intent.getAction();
 
-        // ── STOP dari tombol notifikasi ────────────────────────────────────
+        // STOP — dari tombol ✕ di notifikasi
         if (ACTION_STOP.equals(action)) {
-            stopAlarmAndSelf();
+            doStop();
             return START_NOT_STICKY;
         }
 
-        // ── START alarm ────────────────────────────────────────────────────
+        // START — alarm harian tiba
         int hour = intent.getIntExtra(AlarmReceiver.EXTRA_HOUR, -1);
         if (hour < 0) { stopSelf(); return START_NOT_STICKY; }
 
-        int sesiJam = hour + 1; // jam alarm = 1 jam sebelum sesi → +1 = jam sesi
+        int sesiJam = hour + 1;
 
-        // Wajib startForeground segera agar tidak ANR di Android 8+
-        startForeground(NOTIF_ALARM_ID, buildAlarmNotif(sesiJam));
-
-        // Notifikasi pengingat biasa (bisa di-dismiss user)
-        showReminderNotif(sesiJam);
+        // Langsung tampil notifikasi foreground (wajib cepat di Android 8+)
+        startForeground(NOTIF_ID, buildNotif(sesiJam));
 
         // Mulai alarm
         alarmRunning = true;
@@ -81,7 +76,35 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
         return START_NOT_STICKY;
     }
 
-    // ── TTS ───────────────────────────────────────────────────────────────────
+    // ── STOP ─────────────────────────────────────────────────────────────────
+
+    private void doStop() {
+        alarmRunning = false;
+        // Stop callbacks
+        if (handler != null) {
+            if (beepRunnable != null) handler.removeCallbacks(beepRunnable);
+            if (ttsRunnable  != null) handler.removeCallbacks(ttsRunnable);
+        }
+        // Stop tone
+        if (toneGen != null) {
+            try { toneGen.stopTone(); toneGen.release(); } catch (Exception e) {}
+            toneGen = null;
+        }
+        // Stop vibrate
+        if (vibrator != null) vibrator.cancel();
+        // Stop TTS
+        if (tts != null) tts.stop();
+        // Hapus semua notifikasi & stop service
+        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        if (nm != null) {
+            nm.cancel(NOTIF_ID);
+            nm.cancel(NOTIF_REMIND);
+        }
+        stopForeground(true);
+        stopSelf();
+    }
+
+    // ── TTS ──────────────────────────────────────────────────────────────────
 
     @Override
     public void onInit(int status) {
@@ -92,16 +115,12 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
         }
     }
 
-    private void speak(String text) {
-        if (tts != null && ttsReady)
-            tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts");
-    }
-
     private void startTtsLoop(final String text) {
         ttsRunnable = new Runnable() {
             @Override public void run() {
                 if (!alarmRunning) return;
-                speak(text);
+                if (tts != null && ttsReady)
+                    tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "tts");
                 handler.postDelayed(this, 4000);
             }
         };
@@ -132,56 +151,29 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
         handler.post(beepRunnable);
     }
 
-    private void stopAlarm() {
-        alarmRunning = false;
-        if (handler != null) {
-            if (beepRunnable != null) handler.removeCallbacks(beepRunnable);
-            if (ttsRunnable  != null) handler.removeCallbacks(ttsRunnable);
-        }
-        if (toneGen != null) {
-            try { toneGen.stopTone(); toneGen.release(); } catch (Exception e) {}
-            toneGen = null;
-        }
-        if (vibrator != null) vibrator.cancel();
-        if (tts != null) tts.stop();
-    }
-
-    private void stopAlarmAndSelf() {
-        stopAlarm();
-        // Hapus notifikasi lain juga
-        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        if (nm != null) nm.cancel(NOTIF_REMIND_ID);
-        stopForeground(true);
-        stopSelf();
-    }
-
     // ── NOTIFIKASI ────────────────────────────────────────────────────────────
 
-    private void createChannels() {
+    private void createChannel() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return;
         NotificationManager nm = getSystemService(NotificationManager.class);
 
-        // Channel alarm — prioritas tinggi, tidak ada suara channel (suara dari ToneGenerator)
-        NotificationChannel chA = new NotificationChannel(
-                CHANNEL_ALARM, "Alarm Maxdisplay", NotificationManager.IMPORTANCE_HIGH);
-        chA.setDescription("Alarm saat jadwal maxdisplay tiba");
-        chA.setSound(null, null); // suara dari ToneGenerator, bukan channel
-        chA.enableVibration(false); // vibrasi dari kode, bukan channel
-        chA.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-        nm.createNotificationChannel(chA);
-
-        // Channel pengingat — prioritas normal
-        NotificationChannel chR = new NotificationChannel(
-                CHANNEL_REMIND, "Pengingat Maxdisplay", NotificationManager.IMPORTANCE_DEFAULT);
-        chR.setDescription("Notifikasi pengingat jadwal harian");
-        nm.createNotificationChannel(chR);
+        NotificationChannel ch = new NotificationChannel(
+                CHANNEL_ID, "Alarm Maxdisplay", NotificationManager.IMPORTANCE_HIGH);
+        ch.setDescription("Pengingat jadwal maxdisplay harian");
+        ch.setSound(null, null);       // suara dari ToneGenerator
+        ch.enableVibration(false);     // vibrasi dari kode
+        ch.setShowBadge(true);
+        ch.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+        nm.createNotificationChannel(ch);
     }
 
     /**
-     * Notifikasi foreground alarm — ongoing, ada tombol BERHENTI.
-     * Stop intent dikirim LANGSUNG ke AlarmService (bukan lewat receiver).
+     * Notifikasi gaya compact seperti MIUI timer:
+     * - Ikon jam pasir ⏳
+     * - Teks singkat satu baris
+     * - Tombol ✕ untuk stop (deleteIntent = swipe = stop juga)
      */
-    private Notification buildAlarmNotif(int sesiJam) {
+    private Notification buildNotif(int sesiJam) {
         // Tap notif → buka app
         Intent openIntent = new Intent(this, MainActivity.class);
         openIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
@@ -189,7 +181,7 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
                 this, 0, openIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        // Tombol BERHENTI → kirim ACTION_STOP langsung ke Service ini
+        // Stop intent → langsung ke Service
         Intent stopIntent = new Intent(this, AlarmService.class);
         stopIntent.setAction(ACTION_STOP);
         PendingIntent piStop;
@@ -203,64 +195,33 @@ public class AlarmService extends Service implements TextToSpeech.OnInitListener
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         }
 
-        return new NotificationCompat.Builder(this, CHANNEL_ALARM)
-                .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                .setContentTitle("🔔 Saatnya Maxdisplay!")
-                .setContentText("1 jam lagi jadwal maxdisplay jam " + sesiJam + ":00")
-                .setStyle(new NotificationCompat.BigTextStyle()
-                        .bigText("Jadwal maxdisplay jam " + sesiJam
-                                + ":00 — 1 jam lagi!\nSegera siapkan display toko Anda."))
+        return new NotificationCompat.Builder(this, CHANNEL_ID)
+                // Ikon jam pasir — mirip notif MIUI timer
+                .setSmallIcon(android.R.drawable.ic_dialog_alert)
+                .setContentTitle("⏳ Maxdisplay jam " + sesiJam + ":00")
+                .setContentText("Saatnya maxdisplay! Sentuh untuk buka app")
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-                .setOngoing(true)        // tidak bisa di-swipe
+                .setOngoing(true)
                 .setAutoCancel(false)
+                .setShowWhen(true)
                 .setContentIntent(piOpen)
-                // Tombol aksi — langsung stop alarm
-                .addAction(android.R.drawable.ic_delete,
-                           "⏹ Berhenti", piStop)
+                // Tombol ✕ — stop alarm
+                .addAction(android.R.drawable.ic_delete, "✕ Stop", piStop)
+                // Swipe notif juga stop (deleteIntent)
+                .setDeleteIntent(piStop)
                 .build();
-    }
-
-    /** Notifikasi pengingat biasa — bisa di-dismiss, tidak ada suara berulang */
-    private void showReminderNotif(int sesiJam) {
-        Intent openIntent = new Intent(this, MainActivity.class);
-        openIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent piOpen = PendingIntent.getActivity(
-                this, 2, openIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-
-        // Tombol stop juga ada di notif pengingat
-        Intent stopIntent = new Intent(this, AlarmService.class);
-        stopIntent.setAction(ACTION_STOP);
-        PendingIntent piStop;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            piStop = PendingIntent.getForegroundService(
-                    this, 3, stopIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        } else {
-            piStop = PendingIntent.getService(
-                    this, 3, stopIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        }
-
-        Notification notif = new NotificationCompat.Builder(this, CHANNEL_REMIND)
-                .setSmallIcon(android.R.drawable.ic_popup_reminder)
-                .setContentTitle("📋 Pengingat: Maxdisplay jam " + sesiJam + ":00")
-                .setContentText("Jangan lupa maxdisplay " + sesiJam + ":00 — 1 jam lagi!")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .setAutoCancel(true)
-                .setContentIntent(piOpen)
-                .addAction(android.R.drawable.ic_delete, "⏹ Berhenti", piStop)
-                .build();
-
-        NotificationManager nm = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-        if (nm != null) nm.notify(NOTIF_REMIND_ID, notif);
     }
 
     @Override
     public void onDestroy() {
-        stopAlarm();
+        alarmRunning = false;
+        if (handler != null) {
+            if (beepRunnable != null) handler.removeCallbacks(beepRunnable);
+            if (ttsRunnable  != null) handler.removeCallbacks(ttsRunnable);
+        }
+        if (toneGen != null) { try { toneGen.release(); } catch (Exception e) {} }
         if (tts != null) { tts.shutdown(); tts = null; }
         super.onDestroy();
     }
