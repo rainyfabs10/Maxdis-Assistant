@@ -1806,6 +1806,1050 @@ function resetAll() {
   stopAlarm();
   mainEndTime = null; lorongEndTime = null; activeLorong = null;
   lorongData = LORONG_NAMES.map(name => ({ name, plu: 0, done: false, active: false }));
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Maxdis Assistant</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700;900&display=swap');
+  :root {
+    --red: #E31E24; --red-dark: #B71C1C; --red-light: #FFEBEE;
+    --blue: #1565C0; --blue-light: #E3F2FD;
+    --green: #1B8A3E; --green-light: #E8F5E9; --green-btn: #2E7D32;
+    --gold: #B8860B; --gold-light: #FFF8E1;
+    --orange: #E65100;
+    --white: #FFFFFF; --bg: #F0F2F5;
+    --gray-1: #F5F5F5; --gray-2: #E0E0E0; --gray-3: #9E9E9E; --gray-4: #424242;
+    --text: #212121;
+    --shadow: 0 1px 4px rgba(0,0,0,0.15);
+    --shadow-md: 0 2px 10px rgba(0,0,0,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: 'Roboto', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 30px; }
+
+  /* ── LOADING SCREEN ── */
+  #loadingScreen {
+    position: fixed; inset: 0; z-index: 9999;
+    background: linear-gradient(160deg, #FFFFFF 0%, #FFF8E1 45%, #FFECEC 100%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    overflow: hidden;
+  }
+  #loadingScreen.fade-out { opacity: 0; transform: scale(1.05); pointer-events: none; }
+  #loadingScreen.hidden { display: none; }
+
+  /* Decorative background blobs */
+  .loading-blob {
+    position: absolute; border-radius: 50%;
+    filter: blur(40px); opacity: 0.35;
+  }
+  .loading-blob.b1 { width: 220px; height: 220px; background: #FFD54F; top: -60px; left: -60px; animation: floatBlob 6s ease-in-out infinite; }
+  .loading-blob.b2 { width: 180px; height: 180px; background: #E31E24; bottom: -50px; right: -50px; animation: floatBlob 7s ease-in-out infinite reverse; }
+  @keyframes floatBlob {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(15px,-15px) scale(1.08); }
+  }
+
+  .loading-logo-wrap {
+    display: flex; flex-direction: column; align-items: center;
+    margin-bottom: 36px; position: relative; z-index: 1;
+  }
+  .loading-logo-ring {
+    width: 124px; height: 124px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: 18px; position: relative;
+    background: white;
+    box-shadow: 0 8px 32px rgba(227,30,36,0.18), 0 2px 8px rgba(0,0,0,0.06);
+    animation: logoPop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .loading-logo-ring::before {
+    content: ''; position: absolute; inset: -6px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    border-top-color: #E31E24;
+    border-right-color: #FFD54F;
+    animation: spinRing 1.4s linear infinite;
+  }
+  .loading-logo-ring img {
+    width: 78px; height: 78px; object-fit: contain;
+    animation: logoBreathe 2.4s ease-in-out infinite;
+  }
+  @keyframes logoPop {
+    0% { transform: scale(0.4); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes spinRing { to { transform: rotate(360deg); } }
+  @keyframes logoBreathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+  }
+
+  .loading-app-name {
+    font-size: 23px; font-weight: 900; color: var(--text);
+    letter-spacing: -0.5px;
+    animation: fadeUp 0.5s ease 0.2s both;
+  }
+  .loading-app-sub {
+    font-size: 12.5px; color: var(--gray-3); font-weight: 600;
+    margin-top: 3px; letter-spacing: 0.3px;
+    animation: fadeUp 0.5s ease 0.32s both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .loading-bar-wrap {
+    width: 200px; height: 5px; background: rgba(0,0,0,0.08);
+    border-radius: 99px; overflow: hidden; margin-top: 30px;
+    position: relative; z-index: 1;
+    animation: fadeUp 0.5s ease 0.42s both;
+  }
+  .loading-bar-fill {
+    height: 100%; width: 0%; border-radius: 99px;
+    background: linear-gradient(90deg, #E31E24, #FF6F61, #FFD54F);
+    animation: loadingProgress 2.4s cubic-bezier(0.22, 0.61, 0.36, 1) forwards;
+  }
+  @keyframes loadingProgress {
+    0%   { width: 0%; }
+    25%  { width: 35%; }
+    55%  { width: 65%; }
+    80%  { width: 86%; }
+    100% { width: 100%; }
+  }
+  .loading-label {
+    font-size: 11.5px; color: var(--gray-4); margin-top: 12px;
+    font-weight: 600; letter-spacing: 0.3px; position: relative; z-index: 1;
+    min-height: 16px;
+  }
+  .loading-dots span {
+    display: inline-block; opacity: 0.3;
+    animation: dotPulse 1.2s ease-in-out infinite;
+  }
+  .loading-dots span:nth-child(2) { animation-delay: 0.15s; }
+  .loading-dots span:nth-child(3) { animation-delay: 0.3s; }
+  @keyframes dotPulse {
+    0%, 100% { opacity: 0.25; }
+    50% { opacity: 1; }
+  }
+
+  .watermark { position: fixed; bottom: 8px; right: 12px; font-size: 10px; color: var(--gray-3); font-weight: 600; opacity: 0.5; pointer-events: none; z-index: 10; letter-spacing: 0.3px; }
+
+  /* ── HEADER ── */
+  .header {
+    background: white;
+    padding: 0 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 56px;
+    box-shadow: var(--shadow-md);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+  .header-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .header-icon img { width: 44px; height: 44px; object-fit: contain; }
+  .header-text { }
+  .header-title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.1; }
+  .header-sub { font-size: 10px; color: var(--gray-3); font-weight: 500; }
+  .header-right { display: flex; align-items: center; gap: 8px; }
+  .btn-setting {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--gray-1); border: none; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; transition: background 0.15s;
+  }
+  .btn-setting:active { background: var(--gray-2); }
+
+  /* ── STORE INFO BAR ── */
+  .store-bar {
+    background: #C62828;
+    padding: 6px 14px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid #B71C1C;
+  }
+  .store-name { color: white; font-size: 12px; font-weight: 700; }
+  .store-date { color: rgba(255,255,255,0.85); font-size: 11px; }
+
+  /* ── CONTAINER ── */
+  .container { padding: 12px; max-width: 500px; margin: 0 auto; }
+
+  /* ── ACTION BUTTONS (Full Display / Setting) ── */
+  .action-btns { display: flex; gap: 10px; margin-bottom: 12px; }
+  .action-btn {
+    flex: 1; padding: 14px 8px;
+    border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: 'Roboto', sans-serif;
+    letter-spacing: 0.3px; transition: filter 0.15s;
+  }
+  .action-btn:active { filter: brightness(0.9); }
+  .action-btn-blue { background: var(--blue); color: white; }
+  .action-btn-gold { background: #D32F2F; color: white; }
+
+  /* ── CARD ── */
+  .card {
+    background: white; border-radius: 8px;
+    box-shadow: var(--shadow); margin-bottom: 10px; overflow: hidden;
+  }
+  .card-header {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--gray-2);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .card-header-title { font-size: 12px; font-weight: 700; color: var(--gray-4); text-transform: uppercase; letter-spacing: 0.8px; }
+  .card-body { padding: 14px; }
+
+  /* ── TIME INPUT ── */
+  .time-row { display: flex; align-items: center; gap: 10px; }
+  .time-row label { font-size: 13px; font-weight: 600; color: var(--gray-4); white-space: nowrap; }
+  .time-input {
+    flex: 1; border: 2px solid var(--gray-2); border-radius: 6px;
+    padding: 9px 12px; font-size: 22px; font-weight: 700;
+    font-family: 'Roboto', monospace; color: var(--text);
+    background: var(--gray-1); outline: none; transition: border-color 0.2s;
+  }
+  .time-input:focus { border-color: var(--blue); background: white; }
+
+  /* ── LORONG TABLE ── */
+  .lorong-table { width: 100%; border-collapse: collapse; }
+  .lorong-table th {
+    background: var(--gray-1); font-size: 11px; font-weight: 700;
+    color: var(--gray-4); text-transform: uppercase; letter-spacing: 0.5px;
+    padding: 8px 10px; text-align: left; border-bottom: 2px solid var(--gray-2);
+  }
+  .lorong-table th:last-child, .lorong-table td:last-child { text-align: center; }
+  .lorong-row { border-bottom: 1px solid var(--gray-2); cursor: pointer; transition: background 0.12s; }
+  .lorong-row:hover { background: var(--blue-light); }
+  .lorong-row.done { background: var(--green-light); }
+  .lorong-row.active { background: #FFF3E0; }
+  .lorong-row td { padding: 10px 10px; font-size: 13px; vertical-align: middle; }
+  .lorong-row td:first-child { font-weight: 700; color: var(--text); }
+  .lorong-plu-input {
+    width: 80px; border: 1.5px solid var(--gray-2); border-radius: 4px;
+    padding: 5px 8px; font-size: 14px; font-weight: 700;
+    background: white; color: var(--text); outline: none; text-align: center;
+    font-family: 'Roboto', monospace;
+  }
+  .lorong-plu-input:focus { border-color: var(--blue); }
+  .lorong-est-cell { font-size: 11px; color: var(--gray-3); font-weight: 500; }
+  .status-chip {
+    display: inline-block; padding: 3px 8px; border-radius: 20px;
+    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .chip-pending { background: var(--gray-2); color: var(--gray-4); }
+  .chip-active { background: #FFF3E0; color: var(--orange); }
+  .chip-done { background: var(--green-light); color: var(--green); }
+
+  /* ── SUMMARY ROW ── */
+  .summary-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px; background: var(--red-light);
+    border-top: 2px solid var(--red);
+  }
+  .summary-total-label { font-size: 12px; font-weight: 700; color: var(--red-dark); }
+  .summary-total-val { font-size: 24px; font-weight: 900; color: var(--red-dark); }
+  .summary-total-time { font-size: 11px; color: var(--red); font-weight: 600; margin-top: 2px; }
+
+  /* ── PROGRESS BAR ── */
+  .progress-wrap { background: var(--gray-2); height: 5px; }
+  .progress-fill { height: 100%; background: var(--green); transition: width 0.4s ease; }
+
+  /* ── MAIN TIMER CARD ── */
+  .timer-main-card {
+    background: var(--blue); border-radius: 8px;
+    padding: 20px 16px; margin-bottom: 10px;
+    box-shadow: var(--shadow-md); text-align: center; display: none;
+  }
+  .timer-main-card.visible { display: block; }
+  .timer-main-label { color: rgba(255,255,255,0.8); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .timer-main-display {
+    font-size: 52px; font-weight: 900; color: white;
+    letter-spacing: -2px; font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .timer-main-display.warning { color: #FFD54F; }
+  .timer-main-display.danger { color: #FF8A80; animation: blink 0.7s infinite; }
+  .timer-main-sub { color: rgba(255,255,255,0.75); font-size: 12px; margin-top: 5px; }
+
+  /* ── START BUTTON ── */
+  .btn-start {
+    display: block; width: 100%; padding: 15px;
+    background: var(--blue); color: white; border: none; border-radius: 6px;
+    font-size: 15px; font-weight: 700; cursor: pointer;
+    font-family: 'Roboto', sans-serif; letter-spacing: 0.5px;
+    transition: background 0.15s; margin-bottom: 10px;
+  }
+  .btn-start:hover { background: #0D47A1; }
+  .btn-start:active { filter: brightness(0.9); }
+  .btn-start:disabled { background: var(--gray-3); }
+
+  .btn-reset {
+    display: block; width: 100%; padding: 10px;
+    background: var(--gray-2); color: var(--gray-4); border: none; border-radius: 6px;
+    font-size: 13px; font-weight: 700; cursor: pointer;
+    font-family: 'Roboto', sans-serif; margin-top: 10px;
+  }
+
+  /* ── LORONG OVERLAY ── */
+  .overlay {
+    display: none; position: fixed; inset: 0; z-index: 100;
+    background: rgba(0,0,0,0.55); align-items: flex-end; justify-content: center;
+  }
+  .overlay.open { display: flex; }
+  .overlay-sheet {
+    background: white; border-radius: 16px 16px 0 0;
+    padding: 24px 20px 32px; width: 100%; max-width: 500px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.18); animation: slideUp 0.22s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(60px); opacity:0; } to { transform: translateY(0); opacity:1; } }
+  .overlay-lorong-label { font-size: 11px; font-weight: 700; color: var(--gray-3); text-transform: uppercase; letter-spacing: 0.8px; }
+  .overlay-lorong-name { font-size: 20px; font-weight: 900; color: var(--text); margin: 3px 0 18px; }
+
+  .lorong-timer-circle {
+    width: 150px; height: 150px; margin: 0 auto 18px;
+    position: relative; display: flex; align-items: center; justify-content: center;
+  }
+  .lorong-timer-circle svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .lorong-timer-circle .track { fill: none; stroke: var(--gray-2); stroke-width: 8; }
+  .lorong-timer-circle .progress-circle { fill: none; stroke: var(--blue); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
+  .lorong-timer-time { font-size: 34px; font-weight: 900; color: var(--text); letter-spacing: -1px; text-align: center; font-variant-numeric: tabular-nums; }
+  .lorong-timer-time.warning { color: var(--gold); }
+  .lorong-timer-time.danger { color: var(--red); animation: blink 0.7s infinite; }
+  .lorong-timer-sub { font-size: 11px; color: var(--gray-3); text-align: center; margin-top: 2px; }
+
+  .overlay-btn-row { display: flex; gap: 10px; margin-top: 14px; }
+  .btn-done-lorong {
+    flex: 1; padding: 14px; background: var(--green-btn); color: white;
+    border: none; border-radius: 8px; font-size: 15px; font-weight: 700;
+    cursor: pointer; font-family: 'Roboto', sans-serif;
+  }
+  .btn-close-overlay {
+    padding: 14px 18px; background: var(--gray-1); color: var(--gray-4);
+    border: 1.5px solid var(--gray-2); border-radius: 8px; font-size: 14px;
+    font-weight: 700; cursor: pointer; font-family: 'Roboto', sans-serif;
+  }
+
+  /* ── ALARM OVERLAY ── */
+  .alarm-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    align-items: center; justify-content: center; flex-direction: column;
+    text-align: center; padding: 36px 24px;
+  }
+  .alarm-overlay.open { display: flex; }
+  .alarm-overlay-lorong { background: var(--orange); animation: pulse-bg-orange 0.8s infinite alternate; }
+  .alarm-overlay-maxdis { background: var(--red); animation: pulse-bg-red 0.8s infinite alternate; }
+  .alarm-overlay-daily { background: var(--blue); }
+  @keyframes pulse-bg-orange { from { background: #E65100; } to { background: #BF360C; } }
+  @keyframes pulse-bg-red { from { background: #E31E24; } to { background: #B71C1C; } }
+  .alarm-icon { font-size: 64px; margin-bottom: 14px; animation: shake 0.5s infinite; }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-6px) rotate(-4deg)} 75%{transform:translateX(6px) rotate(4deg)} }
+  .alarm-title { font-size: 24px; font-weight: 900; color: white; line-height: 1.2; margin-bottom: 8px; }
+  .alarm-sub { font-size: 14px; color: rgba(255,255,255,0.85); margin-bottom: 32px; }
+  .alarm-btn {
+    background: white; border: none; border-radius: 12px;
+    padding: 16px 36px; font-size: 18px; font-weight: 900; cursor: pointer;
+    font-family: 'Roboto', sans-serif; box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    animation: pulse-btn 0.8s infinite alternate;
+  }
+  .alarm-btn-orange { color: var(--orange); }
+  .alarm-btn-red { color: var(--red); }
+  .alarm-btn-blue { color: var(--blue); }
+  @keyframes pulse-btn { from{transform:scale(1)} to{transform:scale(1.04)} }
+
+  /* ── SETTINGS PANEL ── */
+  .settings-overlay {
+    display: none; position: fixed; inset: 0; z-index: 300;
+    background: rgba(0,0,0,0.5); align-items: flex-end; justify-content: center;
+  }
+  .settings-overlay.open { display: flex; }
+  .settings-sheet {
+    background: white; border-radius: 16px 16px 0 0;
+    width: 100%; max-width: 500px; padding: 0 0 32px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.2); animation: slideUp 0.22s ease;
+    max-height: 85vh; overflow-y: auto;
+  }
+  .settings-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--gray-2);
+    display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; background: white; z-index: 1;
+  }
+  .settings-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .btn-close-settings {
+    width: 32px; height: 32px; border-radius: 50%; background: var(--gray-1);
+    border: none; cursor: pointer; font-size: 16px; display: flex;
+    align-items: center; justify-content: center;
+  }
+  .settings-section { padding: 14px 20px 0; }
+  .settings-section-title {
+    font-size: 11px; font-weight: 700; color: var(--gray-3);
+    text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 10px;
+  }
+  .settings-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0; border-bottom: 1px solid var(--gray-2);
+  }
+  .settings-item:last-child { border-bottom: none; }
+  .settings-item-text { flex: 1; margin-right: 12px; }
+  .settings-item-label { font-size: 14px; font-weight: 600; color: var(--text); }
+  .settings-item-desc { font-size: 11px; color: var(--gray-3); margin-top: 2px; }
+
+  /* Toggle switch */
+  .toggle { position: relative; width: 44px; height: 24px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0; background: var(--gray-2);
+    border-radius: 24px; cursor: pointer; transition: background 0.2s;
+  }
+  .toggle-slider:before {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; background: white; border-radius: 50%;
+    left: 3px; top: 3px; transition: transform 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle input:checked + .toggle-slider { background: var(--blue); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(20px); }
+
+  .alarm-times-list { padding: 8px 0 12px; }
+  .alarm-time-chip {
+    display: inline-block; padding: 4px 10px; margin: 3px;
+    background: var(--blue-light); color: var(--blue);
+    border-radius: 20px; font-size: 12px; font-weight: 700;
+  }
+  .alarm-time-chip.extra { background: var(--gold-light); color: var(--gold); }
+
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .version-tag {
+    text-align: center; font-size: 10px; color: var(--gray-3);
+    padding: 16px 0 4px; font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<!-- LOADING SCREEN -->
+<div id="loadingScreen">
+  <div class="loading-blob b1"></div>
+  <div class="loading-blob b2"></div>
+  <div class="loading-logo-wrap">
+    <div class="loading-logo-ring">
+      <img src="data:image/png;base64,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" alt="Maxdis" />
+    </div>
+    <div class="loading-app-name">Maxdis Assistant</div>
+    <div class="loading-app-sub">Max Display V4 · Helper</div>
+  </div>
+  <div class="loading-bar-wrap">
+    <div class="loading-bar-fill" id="loadingBar"></div>
+  </div>
+  <div class="loading-label" id="loadingLabel">Memuat aplikasi<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span></div>
+</div>
+
+<!-- WATERMARK -->
+<div class="watermark">@rainyfabs</div>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-icon">
+      <img src="data:image/png;base64,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" alt="Maxdis" />
+    </div>
+    <div class="header-text">
+      <div class="header-title">Maxdis Assistant</div>
+      <div class="header-sub">Max Display V4 – Helper</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <button class="btn-setting" onclick="bukaSettings()" title="Pengaturan">⚙️</button>
+  </div>
+</div>
+
+<!-- STORE BAR -->
+<div class="store-bar">
+  <div style="display:flex;align-items:center;gap:8px;">
+    <img src="data:image/png;base64,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" alt="Alfamart" style="height:28px;width:auto;" />
+    <span class="store-name" style="font-size:13px;font-weight:800;color:white;">Alfamart</span>
+  </div>
+  <span class="store-date" id="storeDate">–</span>
+</div>
+
+<div class="container">
+
+  <!-- ACTION BUTTONS -->
+  <div class="action-btns">
+    <button class="action-btn action-btn-blue" onclick="scrollToTimer()">▶ FULL DISPLAY</button>
+    <button class="action-btn action-btn-gold" id="btnStopAlarmHarian" onclick="stopAlarmHarian()">⏹ STOP ALARM</button>
+  </div>
+
+  <!-- WAKTU MULAI -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">⏰ Waktu Mulai Maxdis</span>
+    </div>
+    <div class="card-body">
+      <div class="time-row">
+        <label>Mulai pukul</label>
+        <input type="time" class="time-input" id="startTime" />
+      </div>
+    </div>
+  </div>
+
+  <!-- LORONG TABLE -->
+  <div class="card">
+    <div class="card-header">
+      <span class="card-header-title">📦 Data PLU per Lorong</span>
+      <span id="lorongDoneCount" style="font-size:11px;font-weight:700;color:var(--green);">0/6 selesai</span>
+    </div>
+    <div class="progress-wrap">
+      <div class="progress-fill" id="lorongProgressBar" style="width:0%"></div>
+    </div>
+    <table class="lorong-table">
+      <thead>
+        <tr>
+          <th>Lorong</th>
+          <th>Total PLU</th>
+          <th>Estimasi</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="lorongTableBody"></tbody>
+    </table>
+    <div class="summary-total">
+      <div>
+        <div class="summary-total-label">Total PLU Semua Lorong</div>
+        <div class="summary-total-time" id="estimasiTotal">Estimasi: –</div>
+      </div>
+      <div class="summary-total-val" id="totalPLU">0</div>
+    </div>
+  </div>
+
+  <!-- TOMBOL MULAI -->
+  <button class="btn-start" id="btnMulai" onclick="mulaiMaxdis()">▶ MULAI MAXDIS</button>
+
+  <!-- MAIN TIMER -->
+  <div class="timer-main-card" id="mainTimerCard">
+    <div class="timer-main-label">⏱ Sisa Waktu Maxdis</div>
+    <div class="timer-main-display" id="mainTimerDisplay">00:00:00</div>
+    <div class="timer-main-sub" id="mainTimerSisa">–</div>
+    <button class="btn-reset" onclick="resetAll()">↩ Reset Maxdis</button>
+  </div>
+
+  <div class="version-tag">Maxdis Assistant v1.1.0 · by @rainyfabs</div>
+</div>
+
+<!-- LORONG TIMER OVERLAY -->
+<div class="overlay" id="lorongOverlay">
+  <div class="overlay-sheet">
+    <div class="overlay-lorong-label">Sedang Dikerjakan</div>
+    <div class="overlay-lorong-name" id="overlayLorongName">Lorong 1</div>
+    <div class="lorong-timer-circle">
+      <svg viewBox="0 0 150 150" width="150" height="150">
+        <circle class="track" cx="75" cy="75" r="64"/>
+        <circle class="progress-circle" id="circleProgress" cx="75" cy="75" r="64"
+          stroke-dasharray="402.12" stroke-dashoffset="0"/>
+      </svg>
+      <div>
+        <div class="lorong-timer-time" id="lorongTimerDisplay">00:00</div>
+        <div class="lorong-timer-sub" id="lorongTimerSub">tersisa</div>
+      </div>
+    </div>
+    <div class="overlay-btn-row">
+      <button class="btn-done-lorong" onclick="selesaiLorong()">✓ Selesai Lorong Ini</button>
+      <button class="btn-close-overlay" onclick="tutupOverlay()">✕</button>
+    </div>
+  </div>
+</div>
+
+<!-- ALARM LORONG -->
+<div class="alarm-overlay alarm-overlay-lorong" id="alarmLorong">
+  <div class="alarm-icon">⏰</div>
+  <div class="alarm-title" id="alarmLorongTitle">Waktu Lorong Habis!</div>
+  <div class="alarm-sub">Segera selesaikan dan pindah ke lorong berikutnya</div>
+  <button class="alarm-btn alarm-btn-orange" onclick="selesaiLorong()">✓ Selesai Lorong Ini</button>
+</div>
+
+<!-- ALARM MAXDIS -->
+<div class="alarm-overlay alarm-overlay-maxdis" id="alarmMaxdis">
+  <div class="alarm-icon">🎯</div>
+  <div class="alarm-title">Waktu Maxdis Habis!</div>
+  <div class="alarm-sub">Segera selesaikan max display sekarang!</div>
+  <button class="alarm-btn alarm-btn-red" onclick="selesaiMaxdis()">✓ Selesai Maxdis</button>
+</div>
+
+<!-- ALARM HARIAN -->
+<div class="alarm-overlay alarm-overlay-daily" id="alarmHarian">
+  <div class="alarm-icon">🔔</div>
+  <div class="alarm-title" id="alarmHarianTitle">Saatnya Maxdisplay!</div>
+  <div class="alarm-sub" id="alarmHarianSub">Segera lakukan maxdisplay sekarang</div>
+  <button class="alarm-btn alarm-btn-blue" onclick="tutupAlarmHarian()">✓ Oke, Siap!</button>
+</div>
+
+<!-- SETTINGS PANEL -->
+<div class="settings-overlay" id="settingsOverlay">
+  <div class="settings-sheet">
+    <div class="settings-header">
+      <span class="settings-title">⚙️ Pengaturan</span>
+      <button class="btn-close-settings" onclick="tutupSettings()">✕</button>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-section-title">🔔 Alarm Pengingat Harian</div>
+
+      <div class="settings-item">
+        <div class="settings-item-text">
+          <div class="settings-item-label">Alarm Pengingat Maxdisplay</div>
+          <div class="settings-item-desc">Pengingat otomatis 1 jam sebelum jadwal maxdis</div>
+          <div class="alarm-times-list">
+            <span class="alarm-time-chip">09:00</span>
+            <span class="alarm-time-chip">13:00</span>
+            <span class="alarm-time-chip">17:00</span>
+            <span class="alarm-time-chip">20:00</span>
+            <span class="alarm-time-chip extra" id="chip02" style="display:none">02:00</span>
+          </div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggleAlarm" onchange="simpanPengaturan()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="settings-item">
+        <div class="settings-item-text">
+          <div class="settings-item-label">Toko 24 Jam</div>
+          <div class="settings-item-desc">Tambah alarm pengingat maxdisplay jam 03:00 (1 jam sebelum jam 04:00 toko 24 jam menambahkan sesi ini)</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="toggleToko24" onchange="simpanPengaturan()">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="settings-section" style="margin-top:8px;">
+      <div class="settings-section-title">ℹ️ Informasi</div>
+      <div class="settings-item">
+        <div class="settings-item-text">
+          <div class="settings-item-label">Versi Aplikasi</div>
+          <div class="settings-item-desc">Maxdis Assistant v1.4.0</div>
+        </div>
+      </div>
+      <div class="settings-item">
+        <div class="settings-item-text">
+          <div class="settings-item-label">Developer</div>
+          <div class="settings-item-desc">@rainyfabs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── LOADING SCREEN ────────────────────────────────────────────────────────
+function initLoading() {
+  const screen = document.getElementById('loadingScreen');
+  const label = document.getElementById('loadingLabel');
+  const dotsHtml = '<span class="loading-dots"><span>.</span><span>.</span><span>.</span></span>';
+  const msgs = [
+    'Memuat aplikasi' + dotsHtml,
+    'Menyiapkan timer' + dotsHtml,
+    'Hampir siap' + dotsHtml
+  ];
+  let i = 0;
+  const msgInterval = setInterval(() => {
+    i = Math.min(i + 1, msgs.length - 1);
+    label.innerHTML = msgs[i];
+  }, 750);
+  setTimeout(() => {
+    clearInterval(msgInterval);
+    label.innerHTML = '✓ Siap digunakan';
+    label.style.color = 'var(--green)';
+    screen.classList.add('fade-out');
+    setTimeout(() => screen.classList.add('hidden'), 600);
+  }, 2500);
+}
+initLoading();
+
+// ── CONSTANTS ──────────────────────────────────────────────────────────────
+const LORONG_NAMES = ['Lorong 1','Lorong 2','Lorong 3','Lorong 4','Lorong 5','Lorong 6'];
+const CIRCUMFERENCE = 2 * Math.PI * 64; // r=64 → ≈402.12
+const isAndroid = (typeof AndroidBridge !== 'undefined');
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let lorongData = LORONG_NAMES.map(name => ({ name, plu: 0, done: false, active: false }));
+let mainTimer = null, lorongTimer = null;
+let mainEndTime = null, lorongEndTime = null;
+let activeLorong = null, lorongTotalSecs = 0;
+let settings = { alarmOn: true, toko24On: false };
+
+// ── INIT ───────────────────────────────────────────────────────────────────
+window.onload = () => {
+  const now = new Date();
+  document.getElementById('startTime').value =
+    `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  updateStoreDate();
+  setInterval(updateStoreDate, 60000);
+  renderLorongTable();
+  muatPengaturan();
+  if (isAndroid) AndroidBridge.requestToggleState();
+  // Update estimasi otomatis saat waktu mulai diubah
+  document.getElementById('startTime').addEventListener('change', updateSummary);
+};
+
+function updateStoreDate() {
+  const now = new Date();
+  const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agt','Sep','Okt','Nov','Des'];
+  document.getElementById('storeDate').textContent =
+    `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+}
+
+// ── LORONG TABLE ───────────────────────────────────────────────────────────
+function renderLorongTable() {
+  const tbody = document.getElementById('lorongTableBody');
+  tbody.innerHTML = '';
+  lorongData.forEach((l, i) => {
+    const estMins = l.plu ? (l.plu * 5 / 60).toFixed(1) : '–';
+    const statusClass = l.done ? 'chip-done' : l.active ? 'chip-active' : 'chip-pending';
+    const statusText = l.done ? '✓ Selesai' : l.active ? '▶ Berjalan' : '– Belum';
+    const rowClass = l.done ? 'done' : l.active ? 'active' : '';
+    const tr = document.createElement('tr');
+    tr.className = `lorong-row ${rowClass}`;
+    tr.id = `lorongRow${i}`;
+    tr.onclick = (e) => { if (!e.target.classList.contains('lorong-plu-input')) bukaLorong(i); };
+    tr.innerHTML = `
+      <td><strong>${l.name}</strong></td>
+      <td><input class="lorong-plu-input" type="number" min="0" placeholder="0"
+        value="${l.plu || ''}" id="pluInput${i}"
+        onclick="event.stopPropagation()"
+        oninput="updatePLU(${i}, this.value)" /></td>
+      <td class="lorong-est-cell">~${estMins} mnt</td>
+      <td><span class="status-chip ${statusClass}">${statusText}</span></td>`;
+    tbody.appendChild(tr);
+  });
+  updateSummary();
+  updateProgress();
+}
+
+function updatePLU(idx, val) {
+  lorongData[idx].plu = parseInt(val) || 0;
+  updateSummary();
+  const estCell = document.querySelector(`#lorongRow${idx} .lorong-est-cell`);
+  if (estCell) estCell.textContent = `~${lorongData[idx].plu ? (lorongData[idx].plu * 5 / 60).toFixed(1) : '–'} mnt`;
+}
+
+function updateSummary() {
+  const total = lorongData.reduce((s, l) => s + l.plu, 0);
+  document.getElementById('totalPLU').textContent = total;
+  if (total) {
+    // Durasi dalam detik: (PLU × 5 ÷ 60 + 1) × 60
+    const totalSecs = Math.ceil(((total * 5 / 60) + 1) * 60);
+    const hh = Math.floor(totalSecs / 3600);
+    const mm = Math.floor((totalSecs % 3600) / 60);
+    const ss = totalSecs % 60;
+    // Format durasi: "15m 15d" atau "1j 2m 30d"
+    let durStr = '';
+    if (hh > 0) durStr += hh + 'j ';
+    durStr += mm + 'm ' + ss + 'd';
+
+    // Estimasi jam selesai = waktu mulai (apa adanya, sesuai input) + durasi
+    const startVal = document.getElementById('startTime').value;
+    let selesaiStr = '';
+    if (startVal) {
+      const [sh, sm] = startVal.split(':').map(Number);
+      const startRef = new Date();
+      startRef.setHours(sh, sm, 0, 0);
+      const endTime = new Date(startRef.getTime() + totalSecs * 1000);
+      const eh = String(endTime.getHours()).padStart(2,'0');
+      const em = String(endTime.getMinutes()).padStart(2,'0');
+      const es = String(endTime.getSeconds()).padStart(2,'0');
+      selesaiStr = ` · Selesai ~${eh}:${em}:${es}`;
+    }
+    document.getElementById('estimasiTotal').textContent = `Est: ${durStr}${selesaiStr}`;
+  } else {
+    document.getElementById('estimasiTotal').textContent = 'Estimasi: –';
+  }
+}
+
+function updateProgress() {
+  const done = lorongData.filter(l => l.done).length;
+  document.getElementById('lorongProgressBar').style.width = (done / 6 * 100) + '%';
+  document.getElementById('lorongDoneCount').textContent = `${done}/6 selesai`;
+}
+
+// ── MAIN TIMER ─────────────────────────────────────────────────────────────
+function mulaiMaxdis() {
+  const startVal = document.getElementById('startTime').value;
+  const total = lorongData.reduce((s, l) => s + l.plu, 0);
+  if (!startVal) { alert('Isi dulu waktu mulai!'); return; }
+  if (total === 0) { alert('Isi dulu total PLU minimal 1 lorong!'); return; }
+
+  // Rumus: (total PLU × 5 ÷ 60) + 1 menit → dalam detik
+  const totalSecs = Math.ceil(((total * 5 / 60) + 1) * 60);
+
+  // Deadline = waktu mulai (sesuai input, apa adanya) + durasi.
+  // Waktu mulai adalah FAKTA kapan kerja dimulai (bisa saja sedikit
+  // di masa lalu dari "sekarang"), bukan jadwal yang harus di masa depan.
+  // Contoh: sekarang 09:50, isi mulai 09:45, durasi 6 menit → selesai 09:51.
+  const [sh, sm] = startVal.split(':').map(Number);
+  const startRef = new Date();
+  startRef.setHours(sh, sm, 0, 0);
+
+  mainEndTime = new Date(startRef.getTime() + totalSecs * 1000);
+
+  // Peringatan jika deadline sudah lewat dari waktu sekarang
+  if (mainEndTime <= new Date()) {
+    const lewatMin = Math.ceil((new Date() - mainEndTime) / 60000);
+    const lanjut = confirm(
+      `⚠️ Berdasarkan waktu mulai yang diisi, maxdis seharusnya sudah selesai ${lewatMin} menit lalu.\n\nLanjutkan? (Timer akan langsung menunjukkan 00:00:00)`
+    );
+    if (!lanjut) return;
+  }
+
+  document.getElementById('mainTimerCard').classList.add('visible');
+  const btn = document.getElementById('btnMulai');
+  btn.textContent = '✓ Maxdis Sedang Berjalan';
+  btn.disabled = true;
+
+  tickMainTimer();
+  mainTimer = setInterval(tickMainTimer, 1000);
+  scrollToTimer();
+}
+
+function tickMainTimer() {
+  const diff = Math.max(0, Math.floor((mainEndTime - new Date()) / 1000));
+  const hh = String(Math.floor(diff / 3600)).padStart(2,'0');
+  const mm = String(Math.floor((diff % 3600) / 60)).padStart(2,'0');
+  const ss = String(diff % 60).padStart(2,'0');
+  const el = document.getElementById('mainTimerDisplay');
+  el.textContent = `${hh}:${mm}:${ss}`;
+  el.className = 'timer-main-display' + (diff <= 300 ? (diff <= 60 ? ' danger' : ' warning') : '');
+  const eh = mainEndTime.getHours().toString().padStart(2,'0');
+  const em = mainEndTime.getMinutes().toString().padStart(2,'0');
+  const mLeft = Math.ceil(diff / 60);
+  document.getElementById('mainTimerSisa').textContent =
+    `Selesai pukul ${eh}:${em}  (${mLeft > 0 ? mLeft + ' menit lagi' : 'sebentar lagi'})`;
+  if (diff === 0) {
+    clearInterval(mainTimer);
+    bunyiAlarmMaxdis();
+    document.getElementById('alarmMaxdis').classList.add('open');
+  }
+}
+
+function selesaiMaxdis() {
+  stopAlarm();
+  document.getElementById('alarmMaxdis').classList.remove('open');
+}
+
+function scrollToTimer() {
+  document.getElementById('mainTimerCard').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── LORONG TIMER ───────────────────────────────────────────────────────────
+function bukaLorong(idx) {
+  if (!mainEndTime) { alert('Mulai Maxdis dulu!'); return; }
+  const l = lorongData[idx];
+  if (l.done) { alert(`${l.name} sudah selesai ✓`); return; }
+  if (l.plu === 0) { alert(`Isi PLU untuk ${l.name} dulu!`); return; }
+
+  activeLorong = idx;
+  lorongData.forEach(x => x.active = false);
+  lorongData[idx].active = true;
+  renderLorongTable();
+
+  document.getElementById('overlayLorongName').textContent = `${l.name} — ${l.plu} PLU`;
+
+  // Rumus lorong: PLU × 5 detik (= PLU × 5/60 menit)
+  lorongTotalSecs = l.plu * 5;
+  lorongEndTime = new Date(Date.now() + lorongTotalSecs * 1000);
+
+  document.getElementById('lorongOverlay').classList.add('open');
+  if (lorongTimer) clearInterval(lorongTimer);
+  tickLorongTimer();
+  lorongTimer = setInterval(tickLorongTimer, 1000);
+}
+
+function tickLorongTimer() {
+  const diff = Math.max(0, Math.floor((lorongEndTime - new Date()) / 1000));
+  const mm = String(Math.floor(diff / 60)).padStart(2,'0');
+  const ss = String(diff % 60).padStart(2,'0');
+  const el = document.getElementById('lorongTimerDisplay');
+  el.textContent = `${mm}:${ss}`;
+  el.className = 'lorong-timer-time' + (diff <= 60 ? ' danger' : diff <= 180 ? ' warning' : '');
+  const mSisa = Math.floor(diff / 60);
+  const sSisa = diff % 60;
+  document.getElementById('lorongTimerSub').textContent =
+    diff > 0 ? `${mSisa > 0 ? mSisa + ' menit ' : ''}${sSisa} detik tersisa` : 'Waktu habis!';
+
+  const offset = CIRCUMFERENCE * (1 - diff / lorongTotalSecs);
+  document.getElementById('circleProgress').style.strokeDashoffset = offset;
+
+  if (diff === 0) {
+    clearInterval(lorongTimer);
+    bunyiAlarmLorong();
+    document.getElementById('alarmLorongTitle').textContent = `Waktu ${lorongData[activeLorong].name} Habis!`;
+    document.getElementById('alarmLorong').classList.add('open');
+  }
+}
+
+function selesaiLorong() {
+  stopAlarm();
+  document.getElementById('alarmLorong').classList.remove('open');
+  clearInterval(lorongTimer);
+  if (activeLorong !== null) {
+    lorongData[activeLorong].done = true;
+    lorongData[activeLorong].active = false;
+  }
+  activeLorong = null;
+  document.getElementById('lorongOverlay').classList.remove('open');
+  renderLorongTable();
+  if (lorongData.every(l => l.done)) {
+    setTimeout(() => alert('🎉 Semua lorong selesai! Maxdis berhasil!'), 300);
+  }
+}
+
+function tutupOverlay() {
+  clearInterval(lorongTimer);
+  if (activeLorong !== null) lorongData[activeLorong].active = false;
+  activeLorong = null;
+  document.getElementById('lorongOverlay').classList.remove('open');
+  renderLorongTable();
+}
+
+// ── ALARM HARIAN ───────────────────────────────────────────────────────────
+function tutupAlarmHarian() {
+  stopAlarm();
+  document.getElementById('alarmHarian').classList.remove('open');
+}
+
+// Dipanggil dari Android saat alarm harian tiba
+function tampilkanAlarmHarian(jam) {
+  document.getElementById('alarmHarianTitle').textContent = `Saatnya Maxdisplay Jam ${jam}:00!`;
+  document.getElementById('alarmHarianSub').textContent = `1 jam lagi jadwal maxdisplay jam ${jam}:00`;
+  document.getElementById('alarmHarian').classList.add('open');
+  bunyiAlarmHarian();
+}
+
+// ── SETTINGS ───────────────────────────────────────────────────────────────
+function bukaSettings() { document.getElementById('settingsOverlay').classList.add('open'); }
+function tutupSettings() { document.getElementById('settingsOverlay').classList.remove('open'); }
+
+function muatPengaturan() {
+  try {
+    const s = JSON.parse(localStorage.getItem('maxdisSettings') || '{}');
+    settings.alarmOn = s.alarmOn !== undefined ? s.alarmOn : true;
+    settings.toko24On = s.toko24On || false;
+  } catch(e) {}
+  document.getElementById('toggleAlarm').checked = settings.alarmOn;
+  document.getElementById('toggleToko24').checked = settings.toko24On;
+  updateChip02();
+}
+
+function simpanPengaturan() {
+  settings.alarmOn = document.getElementById('toggleAlarm').checked;
+  settings.toko24On = document.getElementById('toggleToko24').checked;
+  try { localStorage.setItem('maxdisSettings', JSON.stringify(settings)); } catch(e) {}
+  updateChip02();
+  if (isAndroid) {
+    try { AndroidBridge.saveAlarmSettings(settings.alarmOn, settings.toko24On); } catch(e) {}
+  }
+}
+
+function updateChip02() {
+  document.getElementById('chip02').style.display = settings.toko24On ? 'inline-block' : 'none';
+}
+
+// Dipanggil dari Android untuk sync toggle state
+function setTogglesDariAndroid(alarmOn, toko24On) {
+  settings.alarmOn = alarmOn;
+  settings.toko24On = toko24On;
+  document.getElementById('toggleAlarm').checked = alarmOn;
+  document.getElementById('toggleToko24').checked = toko24On;
+  updateChip02();
+}
+
+// ── STOP ALARM HARIAN ────────────────────────────────────────────────────
+function stopAlarmHarian() {
+  if (isAndroid) {
+    try { AndroidBridge.stopAlarmHarian(); } catch(e) {}
+  }
+  stopAlarm();
+  // Feedback visual
+  const btn = document.getElementById('btnStopAlarmHarian');
+  const orig = btn.textContent;
+  btn.textContent = '✓ Alarm Dimatikan';
+  btn.style.background = 'var(--green-btn)';
+  setTimeout(() => {
+    btn.textContent = orig;
+    btn.style.background = '#D32F2F';
+  }, 3000);
+}
+
+// ── RESET ──────────────────────────────────────────────────────────────────
+function resetAll() {
+  if (!confirm('Reset semua data dan timer?')) return;
+  clearInterval(mainTimer); clearInterval(lorongTimer);
+  stopAlarm();
+  mainEndTime = null; lorongEndTime = null; activeLorong = null;
+  lorongData = LORONG_NAMES.map(name => ({ name, plu: 0, done: false, active: false }));
+  document.getElementById('mainTimerCard').classList.remove('visible');
+  document.getElementById('mainTimerDisplay').textContent = '00:00:00';
+  const btn = document.getElementById('btnMulai');
+  btn.textContent = '▶ MULAI MAXDIS'; btn.disabled = false;
+  ['lorongOverlay','alarmLorong','alarmMaxdis','alarmHarian'].forEach(id =>
+    document.getElementById(id).classList.remove('open'));
+  renderLorongTable();
+}
+
+// ── ALARM AUDIO ────────────────────────────────────────────────────────────
+var audioCtx = null;
+var alarmInterval = null;
+
+function bunyiAlarmMaxdis() {
+  if (isAndroid) { try { AndroidBridge.startAlarm(); } catch(e) {} return; }
+  startWebAudio();
+}
+function bunyiAlarmLorong() {
+  if (isAndroid) { try { AndroidBridge.startAlarmLorong(); } catch(e) {} return; }
+  startWebAudio();
+}
+function bunyiAlarmHarian() {
+  if (isAndroid) { try { AndroidBridge.startAlarmHarian(); } catch(e) {} return; }
+  startWebAudio();
+}
+
+function startWebAudio() {
+  stopAlarm();
+  try {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function beep() {
+      [880,1100,880,1100].forEach((f,i) => {
+        try {
+          const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+          o.type = 'square'; o.frequency.value = f; g.gain.value = 0.25;
+          o.connect(g); g.connect(audioCtx.destination);
+          o.start(audioCtx.currentTime + i*0.22);
+          o.stop(audioCtx.currentTime + i*0.22 + 0.18);
+        } catch(e){}
+      });
+    }
+    beep();
+    alarmInterval = setInterval(beep, 1400);
+  } catch(e) {}
+}
+
+function stopAlarm() {
+  if (isAndroid) { try { AndroidBridge.stopAlarm(); } catch(e) {} }
+  if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
+  if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
+}
+</script>
+</body>
+</html>
+
   document.getElementById('mainTimerCard').classList.remove('visible');
   document.getElementById('mainTimerDisplay').textContent = '00:00:00';
   const btn = document.getElementById('btnMulai');
@@ -1881,57 +2925,7 @@ function simpanPengaturan() {
   updateChip02();
   if (isAndroid) {
     try { AndroidBridge.saveAlarmSettings(settings.alarmOn, settings.toko24On); } catch(e) {}
-  }
-}
-
-function updateChip02() {
-  document.getElementById('chip02').style.display = settings.toko24On ? 'inline-block' : 'none';
-}
-
-// Dipanggil dari Android untuk sync toggle state
-function setTogglesDariAndroid(alarmOn, toko24On) {
-  settings.alarmOn = alarmOn;
-  settings.toko24On = toko24On;
-  document.getElementById('toggleAlarm').checked = alarmOn;
-  document.getElementById('toggleToko24').checked = toko24On;
-  updateChip02();
-}
-
-// ── STOP ALARM HARIAN ────────────────────────────────────────────────────
-function stopAlarmHarian() {
-  if (isAndroid) {
-    try { AndroidBridge.stopAlarmHarian(); } catch(e) {}
-  }
-  stopAlarm();
-  // Feedback visual
-  const btn = document.getElementById('btnStopAlarmHarian');
-  const orig = btn.textContent;
-  btn.textContent = '✓ Alarm Dimatikan';
-  btn.style.background = 'var(--green-btn)';
-  setTimeout(() => {
-    btn.textContent = orig;
-    btn.style.background = '#D32F2F';
-  }, 3000);
-}
-
-// ── RESET ──────────────────────────────────────────────────────────────────
-function resetAll() {
-  if (!confirm('Reset semua data dan timer?')) return;
-  clearInterval(mainTimer); clearInterval(lorongTimer);
-  stopAlarm();
-  mainEndTime = null; lorongEndTime = null; activeLorong = null;
-tch(e){}
-      });
-    }
-    beep();
-    alarmInterval = setInterval(beep, 1400);
-  } catch(e) {}
-}
-
-function stopAlarm() {
-  if (isAndroid) { try { AndroidBridge.stopAlarm(); } catch(e) {} }
-  if (alarmInterval) { clearInterval(alarmInterval); alarmInterval = null; }
-  if (audioCtx) { try { audioCtx.close(); } catch(e) {} audioCtx = null; }
+) {} audioCtx = null; }
 }
 </script>
 </body>
